@@ -1,40 +1,20 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { StoreForm } from '@/components/client/StoreForm';
 import { ContentUpload } from '@/components/client/ContentUpload';
-import { Button } from '@/components/ui/Button';
-import { BackButton } from '@/components/ui/BackButton';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { Tooltip } from '@/components/ui/Tooltip';
+import { ContentDashboard } from '@/components/client/ContentDashboard';
+import { ClientHeader } from '@/components/client/ClientHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Store, Upload, LogOut } from 'lucide-react';
-import Link from 'next/link';
+import { Store, Upload, TrendingUp, Calendar } from 'lucide-react';
 
 async function getStores(userId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   
   const { data, error } = await supabase
     .from('stores')
     .select('*')
-    .eq('user_id', userId);
-  
-  if (error) throw error;
-  return data || [];
-}
-
-async function getContent(userId: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  
-  const { data, error } = await supabase
-    .from('content')
-    .select(`
-      *,
-      stores (name, brand_company)
-    `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   
@@ -42,129 +22,219 @@ async function getContent(userId: string) {
   return data || [];
 }
 
-export default async function Dashboard() {
+async function getContentStats(userId: string) {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('content')
+    .select('type, created_at, start_date, end_date')
+    .eq('user_id', userId);
+  
+  if (error) throw error;
+
+  const now = new Date();
+  const stats = {
+    total: data?.length || 0,
+    active: data?.filter(item =>
+      new Date(item.start_date) <= now && new Date(item.end_date) >= now
+    ).length || 0,
+    scheduled: data?.filter(item =>
+      new Date(item.start_date) > now
+    ).length || 0,
+    thisMonth: data?.filter(item =>
+      new Date(item.created_at).getMonth() === now.getMonth() &&
+      new Date(item.created_at).getFullYear() === now.getFullYear()
+    ).length || 0,
+  };
+
+  return stats;
+}
+
+async function getClientProfile(clientId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', clientId)
+    .eq('role', 'client')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export default async function Dashboard({ searchParams }: { searchParams: { admin_view?: string } }) {
   const user = await getCurrentUser();
   
-  if (!user || user.profile?.role !== 'client') {
+  if (!user || (user.profile?.role !== 'client' && user.profile?.role !== 'admin')) {
     redirect('/auth/client/signin');
   }
 
-  const stores = await getStores(user.id);
-  const content = await getContent(user.id);
+  // Check if admin is viewing a specific client
+  const adminViewClientId = searchParams.admin_view;
+  const isAdminView = user.profile?.role === 'admin' && adminViewClientId;
+
+  let viewingClient = user;
+  let stores, contentStats;
+
+  if (isAdminView) {
+    try {
+      const clientProfile = await getClientProfile(adminViewClientId);
+      viewingClient = { ...user, profile: clientProfile };
+      stores = await getStores(adminViewClientId);
+      contentStats = await getContentStats(adminViewClientId);
+    } catch (error) {
+      notFound();
+    }
+  } else {
+    stores = await getStores(user.id);
+    contentStats = await getContentStats(user.id);
+  }
+
+  const targetUserId = isAdminView ? adminViewClientId : user.id;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <BackButton href="/" label="Back to home" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>
-              <Breadcrumb 
-                items={[
-                  { label: 'Dashboard', current: true }
-                ]} 
-                className="mt-1"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-600">Welcome, {user.email}</span>
-            <Tooltip content="Sign out of your account">
-              <form action="/api/auth/signout" method="post">
-                <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </form>
-            </Tooltip>
-          </div>
-        </div>
-      </header>
+      <ClientHeader
+        user={user}
+        isAdminView={isAdminView}
+        viewingClient={viewingClient}
+      />
 
       <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Upload className="w-8 h-8 text-blue-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{contentStats.total}</p>
+                  <p className="text-sm text-gray-600">Total Content</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="w-8 h-8 text-green-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{contentStats.active}</p>
+                  <p className="text-sm text-gray-600">Active Campaigns</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-8 h-8 text-purple-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{contentStats.scheduled}</p>
+                  <p className="text-sm text-gray-600">Scheduled</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Store className="w-8 h-8 text-orange-600" />
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{stores.length}</p>
+                  <p className="text-sm text-gray-600">Store Locations</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {stores.length === 0 ? (
           <div className="text-center">
             <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Set Up Your Store</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              {isAdminView ? 'Client Needs to Set Up Store' : 'Set Up Your Store'}
+            </h2>
             <p className="text-gray-600 mb-6">
-              First, let's add your store details to get started with content uploads.
+              {isAdminView
+                ? 'This client has not set up their store details yet.'
+                : "First, let's add your store details to get started with content uploads."
+              }
             </p>
-            <StoreForm userId={user.id} />
+            {!isAdminView && <StoreForm userId={user.id} />}
           </div>
         ) : (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-xl font-semibold">Upload New Content</h2>
-                <Tooltip content="Upload images, videos, or audio files for your marketing campaigns" variant="dark">
-                  <Upload className="w-5 h-5 text-gray-400" />
-                </Tooltip>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Upload Section - Only show for non-admin view */}
+            {!isAdminView && (
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Upload className="w-5 h-5" />
+                      Upload New Content
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ContentUpload userId={user.id} storeId={stores[0].id} />
+                  </CardContent>
+                </Card>
               </div>
-              <ContentUpload userId={user.id} storeId={stores[0].id} />
-            </div>
-            
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <h2 className="text-xl font-semibold">Your Stores</h2>
-                <Tooltip content="Manage your store locations and details" variant="dark">
-                  <Store className="w-5 h-5 text-gray-400" />
-                </Tooltip>
-              </div>
-              <div className="space-y-4">
-                {stores.map(store => (
-                  <Card key={store.id}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Store className="w-5 h-5" />
-                        {store.name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600">{store.brand_company}</p>
-                      <p className="text-sm text-gray-500">{store.address}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            )}
+
+            {/* Store Information */}
+            <div className={!isAdminView ? 'lg:col-span-2' : 'lg:col-span-3'}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Store className="w-5 h-5" />
+                    {isAdminView ? 'Client Stores' : 'Your Stores'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {stores.map(store => (
+                      <div key={store.id} className="p-4 bg-gray-50 rounded-lg">
+                        <h3 className="font-semibold text-gray-900">{store.name}</h3>
+                        <p className="text-gray-600">{store.brand_company}</p>
+                        <p className="text-sm text-gray-500">{store.address}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}
 
-        {content.length > 0 && (
+        {/* Content Dashboard */}
+        {stores.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-xl font-semibold">Your Uploaded Content</h2>
-              <Tooltip content="View and manage all your uploaded marketing content" variant="dark">
-                <Upload className="w-5 h-5 text-gray-400" />
-              </Tooltip>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {content.map(item => (
-                <Card key={item.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Upload className="w-4 h-4" />
-                      <span className="font-medium">{item.title}</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{item.stores.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </p>
-                    <div className="mt-2">
-                      <span className={`inline-block px-2 py-1 text-xs rounded ${
-                        item.type === 'image' ? 'bg-blue-100 text-blue-800' :
-                        item.type === 'video' ? 'bg-green-100 text-green-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
-                        {item.type}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {isAdminView ? 'Client Content Library' : 'Your Content Library'}
+            </h2>
+            <ContentDashboard userId={targetUserId} isAdminView={isAdminView} />
           </div>
+        )}
+
+        {isAdminView && (
+          <Card className="bg-orange-50 border-orange-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-orange-600" />
+                <h3 className="font-semibold text-orange-800">Admin View Notice</h3>
+              </div>
+              <p className="text-orange-700 text-sm">
+                You are viewing this client's dashboard with full admin privileges. You can see all their content,
+                stores, and download any files. Upload functionality is disabled in admin view mode.
+              </p>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

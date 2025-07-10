@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSuperadminAccess } from '@/lib/auth';
 import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,8 +14,7 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createClient();
     
     // Get all users and profiles for superadmin view
     const { data: profiles, error } = await supabase
@@ -61,8 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, userId, newRole } = body;
     
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createClient();
     
     switch (action) {
       case 'updateRole':
