@@ -11,13 +11,13 @@ import { Store, Upload, TrendingUp, Calendar } from 'lucide-react';
 
 async function getStores(userId: string) {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from('stores')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
-  
+
   if (error) throw error;
   return data || [];
 }
@@ -29,7 +29,7 @@ async function getContentStats(userId: string) {
     .from('content')
     .select('type, created_at, start_date, end_date')
     .eq('user_id', userId);
-  
+
   if (error) throw error;
 
   const now = new Date();
@@ -217,7 +217,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               {isAdminView ? 'Client Content Library' : 'Your Content Library'}
-            </h2>
+              </h2>
             <ContentDashboard userId={targetUserId} isAdminView={isAdminView} />
           </div>
         )}
@@ -225,14 +225,14 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
         {isAdminView && (
           <Card className="bg-orange-50 border-orange-200">
             <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-5 h-5 text-orange-600" />
-                <h3 className="font-semibold text-orange-800">Admin View Notice</h3>
-              </div>
-              <p className="text-orange-700 text-sm">
-                You are viewing this client's dashboard with full admin privileges. You can see all their content,
-                stores, and download any files. Upload functionality is disabled in admin view mode.
-              </p>
+              <h3 className="font-semibold text-orange-800">Admin View Notice</h3>
+            </div>
+            <p className="text-orange-700 text-sm">
+              You are viewing this client&apos;s dashboard with full admin privileges. You can see all their content,
+              stores, and download any files. Upload functionality is disabled in admin view mode.
+            </p>
             </CardContent>
           </Card>
         )}
