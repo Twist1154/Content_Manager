@@ -1,6 +1,10 @@
+'use client';
+
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/utils/supabase/client';
 
 interface BreadcrumbItem {
   label: string;
@@ -14,12 +18,46 @@ interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items, className }: BreadcrumbProps) {
+  const [user, setUser] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+
+        // Get user profile to determine role
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        setUserRole(profile?.role || 'client');
+      }
+    };
+
+    getUser();
+  }, []);
+
+  const getHomeUrl = () => {
+    if (!user) return '/';
+
+    // Route based on user role
+    if (userRole === 'admin') {
+      return '/admin';
+    } else {
+      return '/dashboard';
+    }
+  };
   return (
     <nav className={cn('flex items-center space-x-1 text-sm text-gray-500', className)}>
       <Link 
-        href="/" 
+        href={getHomeUrl()}
         className="flex items-center hover:text-gray-700 transition-colors"
-        title="Home"
+        title={user ? (userRole === 'admin' ? 'Admin Dashboard' : 'Dashboard') : 'Home'}
       >
         <Home className="w-4 h-4" />
       </Link>

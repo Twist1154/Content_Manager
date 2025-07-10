@@ -102,8 +102,10 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
           .single();
 
         if (error) {
+          console.error(`Profile fetch attempt ${i + 1}:`, error);
+
           if (i === maxRetries - 1) {
-            console.error('Error fetching profile after retries:', error);
+            console.log('Creating new profile for user:', user.id);
             // Create profile if it doesn't exist
             const { data: newProfile, error: insertError } = await supabase
               .from('profiles')
@@ -117,7 +119,8 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
             
             if (insertError) {
               console.error('Error creating profile:', insertError);
-              return { 
+              // Return user with default profile structure
+              return {
                 ...user, 
                 profile: { 
                   id: user.id, 
@@ -131,14 +134,15 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
             return { ...user, profile: newProfile };
           }
           // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
           continue;
         }
         
         return { ...user, profile };
       } catch (err) {
+        console.error(`getCurrentUserWithRetry attempt ${i + 1} failed:`, err);
         if (i === maxRetries - 1) throw err;
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
       }
     }
     return null;
