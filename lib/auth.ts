@@ -1,9 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 
 export async function signUp(email: string, password: string, role: 'client' | 'admin' = 'client') {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -37,8 +35,7 @@ export async function signUp(email: string, password: string, role: 'client' | '
 }
 
 export async function signIn(email: string, password: string) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -50,16 +47,14 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 export async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
   
