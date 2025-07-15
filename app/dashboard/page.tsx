@@ -63,11 +63,12 @@ async function getClientProfile(clientId: string) {
 
 // --- Page Component ---
 
-export default async function Dashboard({
-                                          searchParams,
-                                        }: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default async function Dashboard(
+  props: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
 
   if (!user || (user.profile?.role !== 'client' && user.profile?.role !== 'admin')) {
@@ -76,7 +77,7 @@ export default async function Dashboard({
 
   const adminViewParam = searchParams.admin_view;
   const adminViewClientId = typeof adminViewParam === 'string' ? adminViewParam : undefined;
-  const isAdminView = user.profile?.role === 'admin' && adminViewClientId;
+  const isAdminView = !!(user.profile?.role === 'admin' && adminViewClientId);
 
   try {
     // These variables are now scoped within the try block, which is safer.
