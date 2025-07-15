@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
@@ -24,7 +24,8 @@ export function StoreForm({ userId, onSuccess }: StoreFormProps) {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const supabase = createClient();
+  // Memoize the supabase client to prevent it from being recreated on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

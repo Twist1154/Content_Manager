@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
@@ -43,14 +43,15 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
     dateOfBirth: '',
     username: '',
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
   const { addToast } = useToast();
 
-  const supabase = createClient();
+  // Memoize the supabase client to prevent it from being recreated on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const signUpWithGoogle = async () => {
     setGoogleLoading(true);
@@ -101,7 +102,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
           email: data.user.email!,
           role: role
         });
-      
+
       if (profileError) {
         console.error('Profile creation error:', profileError);
         // Don't throw here as the user is already created
@@ -117,13 +118,13 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
         if (!value.trim()) return 'Full name is required';
         if (value.trim().length < 2) return 'Full name must be at least 2 characters';
         break;
-      
+
       case 'email':
         if (!value) return 'Email is required';
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) return 'Please enter a valid email address';
         break;
-      
+
       case 'password':
         if (!value) return 'Password is required';
         if (value.length < 8) return 'Password must be at least 8 characters';
@@ -131,18 +132,18 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
           return 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
         }
         break;
-      
+
       case 'confirmPassword':
         if (!value) return 'Please confirm your password';
         if (value !== formData.password) return 'Passwords do not match';
         break;
-      
+
       case 'phoneNumber':
         if (!value) return 'Phone number is required';
         const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
         if (!phoneRegex.test(value)) return 'Please enter a valid phone number';
         break;
-      
+
       case 'dateOfBirth':
         if (!value) return 'Date of birth is required';
         const birthDate = new Date(value);
@@ -151,7 +152,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
         if (age < 13) return 'You must be at least 13 years old';
         if (age > 120) return 'Please enter a valid date of birth';
         break;
-      
+
       case 'username':
         if (!value) return 'Username is required';
         if (value.length < 3) return 'Username must be at least 3 characters';
@@ -163,7 +164,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
 
   const handleInputChange = (name: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -195,7 +196,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       addToast({
         type: 'error',
@@ -209,7 +210,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
 
     try {
       const result = await signUp(formData.email, formData.password, userType);
-      
+
       if (result.user) {
         // Show success toast
         addToast({
@@ -233,7 +234,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
       }
     } catch (err: any) {
       console.error('Registration error:', err);
-      
+
       // Show error toast with specific error message
       addToast({
         type: 'error',

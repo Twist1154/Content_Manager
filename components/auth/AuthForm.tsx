@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
@@ -21,7 +21,8 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const supabase = createClient();
+  // Memoize the supabase client to prevent it from being recreated on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const signInWithGoogle = async () => {
     setGoogleLoading(true);
@@ -68,7 +69,7 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
           email: data.user.email!,
           role: role
         });
-      
+
       if (profileError) {
         console.error('Profile creation error:', profileError);
         // Don't throw here as the user is already created
@@ -92,7 +93,7 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
     for (let i = 0; i < maxRetries; i++) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (!user) return null;
 
         const { data: profile, error } = await supabase
@@ -116,7 +117,7 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
               })
               .select()
               .single();
-            
+
             if (insertError) {
               console.error('Error creating profile:', insertError);
               // Return user with default profile structure
@@ -130,14 +131,14 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
                 } 
               };
             }
-            
+
             return { ...user, profile: newProfile };
           }
           // Wait before retry
           await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
           continue;
         }
-        
+
         return { ...user, profile };
       } catch (err) {
         console.error(`getCurrentUserWithRetry attempt ${i + 1} failed:`, err);
@@ -168,7 +169,7 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
           try {
             const currentUser = await getCurrentUserWithRetry();
             console.log('Current user after signin:', currentUser);
-            
+
             if (currentUser?.profile?.role === 'admin') {
               router.push('/admin');
             } else {

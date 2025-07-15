@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -42,17 +42,10 @@ export function AdminClientManagement() {
     const [loading, setLoading] = useState(true);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-    const supabase = createClient();
+    // Memoize the supabase client to prevent it from being recreated on every render
+    const supabase = useMemo(() => createClient(), []);
 
-    useEffect(() => {
-        fetchClients();
-    }, []);
-
-    useEffect(() => {
-        filterClients();
-    }, [clients, searchTerm]);
-
-    const fetchClients = async () => {
+    const fetchClients = useCallback(async () => {
         try {
             // Fetch all client profiles
             const { data: profiles, error: profilesError } = await supabase
@@ -94,9 +87,9 @@ export function AdminClientManagement() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [supabase]);
 
-    const filterClients = () => {
+    const filterClients = useCallback(() => {
         if (!searchTerm) {
             setFilteredClients(clients);
             return;
@@ -110,7 +103,17 @@ export function AdminClientManagement() {
             )
         );
         setFilteredClients(filtered);
-    };
+    }, [clients, searchTerm]);
+
+
+
+    useEffect(() => {
+        fetchClients();
+    }, [fetchClients]);
+
+    useEffect(() => {
+        filterClients();
+    }, [filterClients]);
 
     const downloadClientData = async (clientId: string, clientEmail: string) => {
         try {

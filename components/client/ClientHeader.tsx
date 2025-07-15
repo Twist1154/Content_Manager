@@ -171,7 +171,7 @@ export function ClientHeader({ user, isAdminView, viewingClient }: ClientHeaderP
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Sign Out</h3>
                         <p className="text-gray-600 mb-6">
-                            Are you sure you want to sign out? You'll need to sign in again to access your dashboard.
+                            Are you sure you want to sign out? You&apos;ll need to sign in again to access your dashboard.
                         </p>
                         <div className="flex gap-3 justify-end">
                             <Button

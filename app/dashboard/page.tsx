@@ -9,9 +9,10 @@ import { ClientHeader } from '@/components/client/ClientHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Store, Upload, TrendingUp, Calendar } from 'lucide-react';
 
+// --- Helper Functions (No changes here) ---
+
 async function getStores(userId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('stores')
     .select('*')
@@ -24,7 +25,7 @@ async function getStores(userId: string) {
 
 async function getContentStats(userId: string) {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from('content')
     .select('type, created_at, start_date, end_date')
@@ -33,7 +34,7 @@ async function getContentStats(userId: string) {
   if (error) throw error;
 
   const now = new Date();
-  const stats = {
+  return {
     total: data?.length || 0,
     active: data?.filter(item =>
       new Date(item.start_date) <= now && new Date(item.end_date) >= now
@@ -46,51 +47,69 @@ async function getContentStats(userId: string) {
       new Date(item.created_at).getFullYear() === now.getFullYear()
     ).length || 0,
   };
-
-  return stats;
 }
 
 async function getClientProfile(clientId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', clientId)
     .eq('role', 'client')
     .single();
-
   if (error) throw error;
   return data;
 }
 
-export default async function Dashboard({ searchParams }: { searchParams: { admin_view?: string } }) {
+// --- Page Component ---
+
+export default async function Dashboard({
+                                          searchParams,
+                                        }: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const user = await getCurrentUser();
-  
+
   if (!user || (user.profile?.role !== 'client' && user.profile?.role !== 'admin')) {
     redirect('/auth/client/signin');
   }
 
-  // Check if admin is viewing a specific client
-  const adminViewClientId = searchParams.admin_view;
+  const adminViewParam = searchParams.admin_view;
+  const adminViewClientId = typeof adminViewParam === 'string' ? adminViewParam : undefined;
   const isAdminView = user.profile?.role === 'admin' && adminViewClientId;
 
+  try {
+    // These variables are now scoped within the try block, which is safer.
   let viewingClient = user;
-  let stores, contentStats;
+    let stores, contentStats;
 
+  // **SUGGESTION 1: CENTRALIZED ERROR HANDLING**
+  // Wrap all data fetching in a single try...catch block for robust error handling.
+  try {
   if (isAdminView) {
-    try {
+      // First, get the client profile, as it's a prerequisite for the other fetches.
       const clientProfile = await getClientProfile(adminViewClientId);
+      if (!clientProfile) notFound();
+
       viewingClient = { ...user, profile: clientProfile };
-      stores = await getStores(adminViewClientId);
-      contentStats = await getContentStats(adminViewClientId);
+      [stores, contentStats] = await Promise.all([
+        getStores(adminViewClientId),
+        getContentStats(adminViewClientId),
+      ]);
+
+    } else {
+      // Also apply parallel fetching for the normal user view.
+      [stores, contentStats] = await Promise.all([
+        getStores(user.id),
+        getContentStats(user.id),
+      ]);
+    }
     } catch (error) {
+    // Log the error to the server console for debugging.
+    console.error("Dashboard data fetching failed:", error);
+    // Show a user-friendly "Not Found" page if any database query fails.
       notFound();
     }
-  } else {
-    stores = await getStores(user.id);
-    contentStats = await getContentStats(user.id);
-  }
 
   const targetUserId = isAdminView ? adminViewClientId : user.id;
 
@@ -154,6 +173,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
           </Card>
         </div>
 
+        {/* Conditional UI based on fetched data */}
         {stores.length === 0 ? (
           <div className="text-center">
             <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -174,15 +194,8 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
             {!isAdminView && (
               <div className="lg:col-span-1">
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Upload className="w-5 h-5" />
-                      Upload New Content
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ContentUpload userId={user.id} storeId={stores[0].id} />
-                  </CardContent>
+                  <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />Upload New Content</CardTitle></CardHeader>
+                  <CardContent><ContentUpload userId={user.id} storeId={stores[0].id} /></CardContent>
                 </Card>
               </div>
             )}
@@ -190,12 +203,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
             {/* Store Information */}
             <div className={!isAdminView ? 'lg:col-span-2' : 'lg:col-span-3'}>
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Store className="w-5 h-5" />
-                    {isAdminView ? 'Client Stores' : 'Your Stores'}
-                  </CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Store className="w-5 h-5" />{isAdminView ? 'Client Stores' : 'Your Stores'}</CardTitle></CardHeader>
                 <CardContent>
                   <div className="grid gap-4">
                     {stores.map(store => (
@@ -215,9 +223,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
         {/* Content Dashboard */}
         {stores.length > 0 && (
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {isAdminView ? 'Client Content Library' : 'Your Content Library'}
-              </h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{isAdminView ? 'Client Content Library' : 'Your Content Library'}</h2>
             <ContentDashboard userId={targetUserId} isAdminView={isAdminView} />
           </div>
         )}
@@ -239,4 +245,9 @@ export default async function Dashboard({ searchParams }: { searchParams: { admi
       </main>
     </div>
   );
+
+  } catch (error) {
+    console.error("Dashboard data fetching failed:", error);
+    notFound();
+  }
 }

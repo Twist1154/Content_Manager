@@ -40,7 +40,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
     };
 
     getUser();
-  }, []);
+  }, [supabase]);
 
   const getHomeUrl = () => {
     if (!user) return '/';
@@ -61,7 +61,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
       >
         <Home className="w-4 h-4" />
       </Link>
-      
+
       {items.map((item, index) => (
         <div key={index} className="flex items-center space-x-1">
           <ChevronRight className="w-4 h-4" />

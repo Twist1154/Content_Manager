@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -58,17 +58,10 @@ export function BulkDownloadManager() {
         company: '',
     });
 
-    const supabase = createClient();
+    // Memoize the supabase client to prevent it from being recreated on every render
+    const supabase = useMemo(() => createClient(), []);
 
-    useEffect(() => {
-        fetchContent();
-    }, []);
-
-    useEffect(() => {
-        applyFilters();
-    }, [content, filters]);
-
-    const fetchContent = async () => {
+    const fetchContent = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from('content')
@@ -86,9 +79,9 @@ export function BulkDownloadManager() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [supabase]);
 
-    const applyFilters = () => {
+    const applyFilters = useCallback(() => {
         let filtered = [...content];
 
         if (filters.startDate) {
@@ -121,7 +114,15 @@ export function BulkDownloadManager() {
 
         setFilteredContent(filtered);
         setSelectedItems(new Set()); // Clear selection when filters change
-    };
+    }, [content, filters]);
+
+    useEffect(() => {
+        fetchContent();
+    }, [fetchContent]);
+
+    useEffect(() => {
+        applyFilters();
+    }, [applyFilters]);
 
     const toggleSelectAll = () => {
         if (selectedItems.size === filteredContent.length) {

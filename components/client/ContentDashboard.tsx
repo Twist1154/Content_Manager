@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import NextImage from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -85,13 +86,10 @@ export function ContentDashboard({ userId, isAdminView }: ContentDashboardProps)
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 12;
 
-    const supabase = createClient();
+    // Memoize the supabase client to prevent it from being recreated on every render
+    const supabase = useMemo(() => createClient(), []);
 
-    useEffect(() => {
-        fetchContent();
-    }, [userId]);
-
-    const fetchContent = async () => {
+    const fetchContent = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from('content')
@@ -109,7 +107,11 @@ export function ContentDashboard({ userId, isAdminView }: ContentDashboardProps)
         } finally {
             setLoading(false);
         }
-    };
+    }, [supabase, userId]);
+
+    useEffect(() => {
+        fetchContent();
+    }, [fetchContent]);
 
     // Filter and sort content
     const filteredAndSortedContent = useMemo(() => {
@@ -644,12 +646,18 @@ export function ContentDashboard({ userId, isAdminView }: ContentDashboardProps)
 
                             {/* Media Preview */}
                             {selectedContent.type === 'image' && (
-                                <div className="mt-4">
-                                    <img
-                                        src={selectedContent.file_url}
-                                        alt={selectedContent.title}
-                                        className="max-w-full h-auto rounded-lg"
-                                    />
+                                <div className="mt-4 relative">
+                                    <div className="relative w-full h-auto aspect-video">
+                                        <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                                            <NextImage
+                                                src={selectedContent.file_url}
+                                                alt={selectedContent.title}
+                                                fill
+                                                className="object-contain rounded-lg"
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 

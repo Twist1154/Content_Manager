@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
@@ -27,7 +27,8 @@ export function ContentUpload({ userId, storeId, onSuccess }: ContentUploadProps
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const supabase = createClient();
+  // Memoize the supabase client to prevent it from being recreated on every render
+  const supabase = useMemo(() => createClient(), []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
@@ -80,7 +81,7 @@ export function ContentUpload({ userId, storeId, onSuccess }: ContentUploadProps
     try {
       for (const file of files) {
         const fileUrl = await uploadFile(file);
-        
+
         const { error } = await supabase.from('content').insert({
           store_id: storeId,
           user_id: userId,

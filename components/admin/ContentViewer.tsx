@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import NextImage from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -60,19 +61,10 @@ export function ContentViewer() {
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = createClient();
+  // Memoize the supabase client to prevent it from being recreated on every render
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    fetchContent();
-  }, []);
-
-  useEffect(() => {
-    if (viewMode !== 'grid') {
-    groupContent();
-    }
-  }, [content, viewMode, sortOrder]);
-
-  const fetchContent = async () => {
+  const fetchContent = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('content')
@@ -95,9 +87,9 @@ export function ContentViewer() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
-  const groupContent = () => {
+  const groupContent = useCallback(() => {
     const sorted = [...content].sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
@@ -115,7 +107,7 @@ export function ContentViewer() {
         if (!grouped[location]) grouped[location] = {};
         if (!grouped[location][company]) grouped[location][company] = {};
         if (!grouped[location][company][type]) grouped[location][company][type] = [];
-        
+
         grouped[location][company][type].push(item);
       } else {
         const company = item.stores.brand_company;
@@ -125,13 +117,23 @@ export function ContentViewer() {
         if (!grouped[company]) grouped[company] = {};
         if (!grouped[company][location]) grouped[company][location] = {};
         if (!grouped[company][location][type]) grouped[company][location][type] = [];
-        
+
         grouped[company][location][type].push(item);
       }
     });
 
     setGroupedContent(grouped);
-  };
+  }, [content, viewMode, sortOrder]);
+
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
+
+  useEffect(() => {
+    if (viewMode !== 'grid') {
+      groupContent();
+    }
+  }, [viewMode, groupContent]);
 
   const sortedContent = useMemo(() => {
     return [...content].sort((a, b) => {
@@ -176,16 +178,22 @@ export function ContentViewer() {
       {/* Image/Video Preview */}
       <div className="relative aspect-video bg-gray-100 overflow-hidden">
         {item.type === 'image' && (
-          <img
-            src={item.file_url}
-            alt={item.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-              target.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
+          <div className="relative w-full h-full">
+            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              <NextImage
+                src={item.file_url}
+                alt={item.title}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  (target.parentNode as HTMLElement).parentElement?.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            </div>
+          </div>
         )}
         {item.type === 'video' && (
           <div className="relative w-full h-full">
@@ -491,7 +499,7 @@ export function ContentViewer() {
                   <strong>Uploaded:</strong> {format(new Date(selectedContent.created_at), 'MMM dd, yyyy HH:mm')}
                 </div>
               </div>
-              
+
               {selectedContent.recurrence_days && selectedContent.recurrence_days.length > 0 && (
                 <div>
                   <strong>Recurrence Days:</strong> {selectedContent.recurrence_days.join(', ')}
@@ -524,12 +532,18 @@ export function ContentViewer() {
               </div>
 
               {selectedContent.type === 'image' && (
-                <div className="mt-4">
-                  <img
-                    src={selectedContent.file_url}
-                    alt={selectedContent.title}
-                    className="max-w-full h-auto rounded"
-                  />
+                <div className="mt-4 relative">
+                  <div className="relative w-full h-auto aspect-video">
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                      <NextImage
+                        src={selectedContent.file_url}
+                        alt={selectedContent.title}
+                        fill
+                        className="object-contain rounded"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
