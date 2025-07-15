@@ -3,16 +3,27 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
+// Define the type for a single breadcrumb object
+interface Breadcrumb {
+  label: string;
+  href?: string;
+  current?: boolean;
+}
+
+// Define the return type for the hook's state
 interface NavigationState {
   canGoBack: boolean;
   currentPath: string;
-  breadcrumbs: Array<{ label: string; href?: string; current?: boolean }>;
+  breadcrumbs: Breadcrumb[]; // Use the Breadcrumb type here
 }
 
-export function useNavigation(): NavigationState & {
+// Define the full return type for the hook, including functions
+interface UseNavigationReturn extends NavigationState {
   goBack: () => void;
   navigateTo: (path: string) => void;
-} {
+}
+
+export function useNavigation(): UseNavigationReturn {
   const router = useRouter();
   const pathname = usePathname();
   const [canGoBack, setCanGoBack] = useState(false);
@@ -22,9 +33,10 @@ export function useNavigation(): NavigationState & {
     setCanGoBack(window.history.length > 1);
   }, [pathname]);
 
-  const generateBreadcrumbs = (path: string) => {
+  const generateBreadcrumbs = (path: string): Breadcrumb[] => {
     const segments = path.split('/').filter(Boolean);
-    const breadcrumbs = [];
+    // This is the FIX: Explicitly type the empty array.
+    const breadcrumbs: Breadcrumb[] = [];
 
     // Map common paths to user-friendly labels
     const pathLabels: Record<string, string> = {
