@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Hapo Uploader',
-  description: 'A greate advertising content management system for clients and marketing teams.',
+  description: 'A great advertising content management system for clients and marketing teams.',
   icons: {
     icon: [
       { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
