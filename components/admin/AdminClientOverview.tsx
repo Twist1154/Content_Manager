@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Tooltip } from '@/components/ui/Tooltip';
@@ -17,121 +16,44 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
-
-interface Client {
-    id: string;
-    email: string;
-    role: string;
-    created_at: string;
-    stores?: {
-        id: string;
-        name: string;
-        brand_company: string;
-    }[];
-    content_count?: number;
-    latest_upload?: string;
-    active_campaigns?: number;
-}
+import { getClientOverview } from '@/app/actions/client-overview-action';
+import type { ClientOverview, OverviewStats } from '@/app/actions/client-overview-action';
 
 export function AdminClientOverview() {
-    const [clients, setClients] = useState<Client[]>([]);
+    const [clients, setClients] = useState<ClientOverview[]>([]);
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState({
+    const [stats, setStats] = useState<OverviewStats>({
         totalClients: 0,
         activeClients: 0,
         totalUploads: 0,
         recentActivity: 0
     });
 
-    // Memoize the supabase client to prevent it from being recreated on every render
-    const supabase = useMemo(() => createClient(), []);
-
-    const fetchClientOverview = useCallback(async () => {
+    const fetchClientOverview = async () => {
+        console.log('AdminClientOverview: Fetching client overview...');
+        setLoading(true);
+        
         try {
-            // Fetch client profiles
-            const { data: profiles, error: profilesError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('role', 'client')
-                .order('created_at', { ascending: false })
-                .limit(6); // Show only recent 6 clients for overview
-
-            if (profilesError) throw profilesError;
-
-            // Get additional data for each client
-            const clientsWithData = await Promise.all(
-                (profiles || []).map(async (profile) => {
-                    // Get stores
-                    const { data: stores } = await supabase
-                        .from('stores')
-                        .select('id, name, brand_company')
-                        .eq('user_id', profile.id);
-
-                    // Get content data
-                    const { data: content } = await supabase
-                        .from('content')
-                        .select('created_at, start_date, end_date')
-                        .eq('user_id', profile.id)
-                        .order('created_at', { ascending: false });
-
-                    // Calculate active campaigns
-                    const now = new Date();
-                    const activeCampaigns = content?.filter(item =>
-                        new Date(item.start_date) <= now && new Date(item.end_date) >= now
-                    ).length || 0;
-
-                    return {
-                        ...profile,
-                        stores: stores || [],
-                        content_count: content?.length || 0,
-                        latest_upload: content?.[0]?.created_at || null,
-                        active_campaigns: activeCampaigns,
-                    };
-                })
-            );
-
-            setClients(clientsWithData);
-
-            // Calculate overview stats
-            const { data: allProfiles } = await supabase
-                .from('profiles')
-                .select('id, created_at')
-                .eq('role', 'client');
-
-            const { data: allContent } = await supabase
-                .from('content')
-                .select('created_at, user_id');
-
-            const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-            const recentActivity = allContent?.filter(item =>
-                new Date(item.created_at) >= oneWeekAgo
-            ).length || 0;
-
-            const activeClients = new Set(
-                allContent?.filter(item =>
-                    new Date(item.created_at) >= oneWeekAgo
-                ).map(item => item.user_id)
-            ).size;
-
-            setStats({
-                totalClients: allProfiles?.length || 0,
-                activeClients,
-                totalUploads: allContent?.length || 0,
-                recentActivity
-            });
-
+            // Call the server action to get client overview data
+            const result = await getClientOverview();
+            console.log('AdminClientOverview: Server action result:', result);
+            
+            if (result.success) {
+                setClients(result.clients);
+                setStats(result.stats);
+            } else {
+                console.error('AdminClientOverview: Error fetching client overview:', result.error);
+            }
         } catch (error) {
-            console.error('Error fetching client overview:', error);
+            console.error('AdminClientOverview: Exception during fetch:', error);
         } finally {
             setLoading(false);
         }
-    }, [supabase]);
+    };
 
     useEffect(() => {
         fetchClientOverview();
-    }, [fetchClientOverview]);
+    }, []);
 
     if (loading) {
         return (

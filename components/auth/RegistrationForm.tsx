@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
-import { User, Mail, Lock, Phone, Calendar, AtSign, Chrome } from 'lucide-react';
+import { User, Mail, Lock, Phone, AtSign, Chrome } from 'lucide-react';
+import { registerUser } from '@/app/actions/auth-actions';
 
 interface RegistrationFormProps {
   userType?: 'client' | 'admin';
@@ -19,7 +20,6 @@ interface FormData {
   password: string;
   confirmPassword: string;
   phoneNumber: string;
-  dateOfBirth: string;
   username: string;
 }
 
@@ -29,7 +29,6 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   phoneNumber?: string;
-  dateOfBirth?: string;
   username?: string;
 }
 
@@ -40,7 +39,6 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
     password: '',
     confirmPassword: '',
     phoneNumber: '',
-    dateOfBirth: '',
     username: '',
   });
 
@@ -80,6 +78,9 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
     }
   };
 
+  // This function is no longer used - we use the server action instead
+  // Keeping it commented for reference
+  /*
   const signUp = async (email: string, password: string, role: 'client' | 'admin' = 'client') => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -111,6 +112,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
 
     return data;
   };
+  */
 
   const validateField = (name: keyof FormData, value: string): string | undefined => {
     switch (name) {
@@ -142,15 +144,6 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
         if (!value) return 'Phone number is required';
         const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
         if (!phoneRegex.test(value)) return 'Please enter a valid phone number';
-        break;
-
-      case 'dateOfBirth':
-        if (!value) return 'Date of birth is required';
-        const birthDate = new Date(value);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        if (age < 13) return 'You must be at least 13 years old';
-        if (age > 120) return 'Please enter a valid date of birth';
         break;
 
       case 'username':
@@ -417,26 +410,6 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
               )}
             </div>
 
-            {/* Date of Birth */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date of Birth *
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  onBlur={() => handleBlur('dateOfBirth')}
-                  className={`pl-10 ${errors.dateOfBirth ? 'border-red-500' : ''}`}
-                  required
-                />
-              </div>
-              {errors.dateOfBirth && (
-                <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>
-              )}
-            </div>
           </div>
 
           <div className="text-sm text-gray-600">
