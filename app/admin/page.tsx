@@ -1,12 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { ContentViewer } from '@/components/admin/ContentViewer';
-import { AdminClientManagement } from '@/components/admin/AdminClientManagement';
-import { Button } from '@/components/ui/Button';
-import { BackButton } from '@/components/ui/BackButton';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { AdminClientOverview } from '@/components/admin/AdminClientOverview';
+import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { LogOut, Shield, Users, Database, Download } from 'lucide-react';
+import { Users, Database, Download, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function AdminDashboard() {
@@ -18,36 +16,10 @@ export default async function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <BackButton href="/" label="Back to home" />
-            <div className="flex items-center gap-3">
-              <Shield className="w-6 h-6 text-green-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Marketing Admin Dashboard</h1>
-                <Breadcrumb 
-                  items={[
-                    { label: 'Admin Dashboard', current: true }
-                  ]} 
-                  className="mt-1"
+      <AdminHeader
+        user={user}
+        title="Marketing Admin Dashboard"
                 />
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-600">Admin: {user.email}</span>
-            <Tooltip content="Sign out of admin account">
-              <form action="/api/auth/signout" method="post">
-                <Button variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </form>
-            </Tooltip>
-          </div>
-        </div>
-      </header>
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-6 mb-8">
@@ -109,11 +81,12 @@ export default async function AdminDashboard() {
             </Tooltip>
           </div>
           <p className="text-gray-600 mb-6">
-            Quick access to client accounts and their dashboard views.
+            Quick access to client accounts, their dashboard views, and recent activity.
           </p>
 
-          <AdminClientManagement />
+          <AdminClientOverview />
         </div>
+
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <h2 className="text-xl font-semibold text-gray-900">Recent Content Activity</h2>
