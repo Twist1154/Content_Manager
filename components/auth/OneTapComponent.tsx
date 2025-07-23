@@ -5,7 +5,7 @@
 import Script from 'next/script';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface CredentialResponse {
   credential: string;
@@ -43,7 +43,7 @@ const OneTapComponent = () => {
     return [nonce, hashedNonce];
   };
 
-        const initializeGoogleOneTap = async () => {
+        const initializeGoogleOneTap = useCallback(async () => {
     console.log('Initializing Google One Tap');
 
     // Check if Google script is loaded
@@ -60,9 +60,29 @@ const OneTapComponent = () => {
         return;
             }
 
-      // If a session exists, don't initialize One Tap
+      // If a session exists, don't initialize One Tap and redirect to dashboard
             if (data.session) {
-        console.log('User already has a session. Skipping One Tap.');
+        console.log('User already has a session. Skipping One Tap and redirecting to dashboard.');
+        
+        // Fetch user profile to determine role
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+        
+        if (profileError) {
+          console.error('Error fetching user profile:', profileError);
+          // Default to client role if profile fetch fails
+          router.push('/dashboard');
+          return;
+        }
+        
+        // Redirect based on user role
+        const userRole = profile?.role || 'client';
+        const redirectPath = userRole === 'admin' ? '/admin' : '/dashboard';
+        
+        router.push(redirectPath);
         return;
             }
 
@@ -133,15 +153,20 @@ const OneTapComponent = () => {
                 nonce: hashedNonce,
         auto_select: false,
         cancel_on_tap_outside: true,
-                use_fedcm_for_prompt: true,
+        use_fedcm_for_prompt: false,
       });
 
-      // Show the One Tap prompt
+      // Show the One Tap prompt with error handling
+      try {
       window.google.accounts.id.prompt();
+      } catch (error) {
+        console.error('Error showing Google One Tap prompt:', error);
+        // Silently fail - user can still use regular auth forms
+      }
     } catch (error) {
       console.error('Error initializing Google One Tap:', error);
         }
-  };
+  }, [supabase, router, generateNonce]);
 
   useEffect(() => {
     if (scriptLoaded) {
@@ -149,7 +174,7 @@ const OneTapComponent = () => {
       const timeoutId = setTimeout(initializeGoogleOneTap, 100);
         return () => clearTimeout(timeoutId);
     }
-  }, [scriptLoaded]);
+  }, [scriptLoaded, initializeGoogleOneTap]);
 
   const handleScriptLoad = () => {
     console.log('Google GSI script loaded');

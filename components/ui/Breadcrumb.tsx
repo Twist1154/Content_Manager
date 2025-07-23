@@ -52,6 +52,9 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
       return '/dashboard';
     }
   };
+  // Filter items to only include those with a valid href or the current item
+  const validItems = items.filter(item => item.href || item.current);
+  
   return (
     <nav className={cn('flex items-center space-x-1 text-sm text-gray-500', className)}>
       <Link 
@@ -62,7 +65,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         <Home className="w-4 h-4" />
       </Link>
 
-      {items.map((item, index) => (
+      {validItems.map((item, index) => (
         <div key={index} className="flex items-center space-x-1">
           <ChevronRight className="w-4 h-4" />
           {item.href && !item.current ? (
