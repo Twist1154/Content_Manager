@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { updateUserAfterOAuth } from '@/app/actions/auth-actions';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -39,6 +40,21 @@ export async function GET(request: NextRequest) {
           if (insertError) {
             console.error('Error creating profile:', insertError);
           }
+        }
+
+        // Update user's app_metadata to ensure JWT contains the correct role
+        try {
+          const result = await updateUserAfterOAuth(
+            data.user.id,
+            data.user.email!,
+            userType as 'client' | 'admin'
+          );
+
+          if (!result.success) {
+            console.error('Error updating user app_metadata:', result.error);
+          }
+        } catch (error) {
+          console.error('Exception updating user app_metadata:', error);
         }
 
         // Redirect based on user type or existing profile role

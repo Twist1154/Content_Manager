@@ -78,41 +78,6 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
     }
   };
 
-  // This function is no longer used - we use the server action instead
-  // Keeping it commented for reference
-  /*
-  const signUp = async (email: string, password: string, role: 'client' | 'admin' = 'client') => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role: role
-        }
-      }
-    });
-
-    if (error) throw error;
-
-    // If user is created, ensure profile exists with correct role
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: data.user.id,
-          email: data.user.email!,
-          role: role
-        });
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // Don't throw here as the user is already created
-      }
-    }
-
-    return data;
-  };
-  */
 
   const validateField = (name: keyof FormData, value: string): string | undefined => {
     switch (name) {
@@ -202,13 +167,14 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
     setLoading(true);
 
     try {
-      const result = await signUp(formData.email, formData.password, userType);
+      const result = await registerUser(formData.email, formData.password, userType);
 
-      if (result.user) {
+      if (result.success) {
         // Show success toast
         addToast({
           type: 'success',
           title: 'Account created successfully!',
+          message: result.message,
         });
 
         // Show welcome toast
@@ -224,6 +190,8 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
         setTimeout(() => {
           router.push(userType === 'admin' ? '/admin' : '/dashboard');
         }, 2000);
+      } else {
+        throw new Error(result.error || result.message);
       }
     } catch (err: any) {
       console.error('Registration error:', err);

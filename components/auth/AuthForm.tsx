@@ -47,37 +47,6 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
       setGoogleLoading(false);
     }
   };
-  const signUp = async (email: string, password: string, role: 'client' | 'admin' = 'client') => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          role: role
-        }
-      }
-    });
-
-    if (error) throw error;
-
-    // If user is created, ensure profile exists with correct role
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: data.user.id,
-          email: data.user.email!,
-          role: role
-        });
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        // Don't throw here as the user is already created
-      }
-    }
-
-    return data;
-  };
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -156,11 +125,17 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
 
     try {
       if (mode === 'signup') {
-        const result = await signUp(email, password, userType);
-        if (result.user) {
-          // For signup, redirect based on userType immediately
+        // Use the server action for registration
+        const { registerUser } = await import('@/app/actions/auth-actions');
+        const result = await registerUser(email, password, userType);
+
+        if (result.success) {
+          // Show success message and redirect
+          console.log('Registration successful:', result.message);
           router.push(userType === 'admin' ? '/admin' : '/dashboard');
           return;
+        } else {
+          throw new Error(result.error || result.message);
         }
       } else {
         const result = await signIn(email, password);

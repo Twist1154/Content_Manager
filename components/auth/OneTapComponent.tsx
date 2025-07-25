@@ -153,7 +153,7 @@ const OneTapComponent = () => {
                 nonce: hashedNonce,
         auto_select: false,
         cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: false,
+        use_fedcm_for_prompt: true,
       });
 
       // Show the One Tap prompt with error handling
@@ -170,7 +170,6 @@ const OneTapComponent = () => {
 
   useEffect(() => {
     if (scriptLoaded) {
-      // Small delay to ensure the script is fully ready
       const timeoutId = setTimeout(initializeGoogleOneTap, 100);
         return () => clearTimeout(timeoutId);
     }

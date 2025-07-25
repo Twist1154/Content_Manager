@@ -28,12 +28,32 @@ export function ClientHeader({ user, isAdminView, viewingClient }: ClientHeaderP
 
     const handleLogout = async () => {
         try {
-            const response = await fetch('/api/auth/signout', { method: 'POST' });
-            if (response.ok) {
+            const response = await fetch('/api/auth/signout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Clear any local storage or session data if needed
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // Redirect to home page
+                router.push('/');
+                router.refresh(); // Force a refresh to clear any cached data
+            } else {
+                console.error('Logout failed:', data.error);
+                // Still redirect even if there's an error to prevent being stuck
                 router.push('/');
             }
         } catch (error) {
             console.error('Logout error:', error);
+            // Fallback: still redirect to home page
+            router.push('/');
         }
     };
 
