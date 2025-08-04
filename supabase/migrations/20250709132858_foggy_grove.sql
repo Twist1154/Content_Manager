@@ -65,17 +65,12 @@ CREATE POLICY "Users can update own content"
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- CORRECTED: The admin policy now uses a non-recursive JWT check.
 CREATE POLICY "Admins can read all content"
   ON content
   FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  USING ( (auth.jwt() ->> 'role') = 'admin' );
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_content_user_id ON content(user_id);

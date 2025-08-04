@@ -80,7 +80,6 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
 
   // This function is no longer used - we use the server action instead
   // Keeping it commented for reference
-  /*
   const signUp = async (email: string, password: string, role: 'client' | 'admin' = 'client') => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -112,7 +111,7 @@ export function RegistrationForm({ userType = 'client' }: RegistrationFormProps)
 
     return data;
   };
-  */
+
 
   const validateField = (name: keyof FormData, value: string): string | undefined => {
     switch (name) {

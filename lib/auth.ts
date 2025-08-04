@@ -1,35 +1,19 @@
 import { createClient } from '@/utils/supabase/server';
+import { registerUser } from '@/app/actions/auth-actions';
 
 export async function signUp(email: string, password: string, role: 'client' | 'admin' = 'client') {
+  // Use the server action to register the user with proper role handling
+  const result = await registerUser(email, password, role);
+
+  if (!result.success) {
+    throw new Error(result.error || result.message);
+  }
+
+  // Get the user data to return in the same format as the original function
   const supabase = await createClient();
-  
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        role: role
-      }
-    }
-  });
+  const { data, error } = await supabase.auth.getUser();
 
   if (error) throw error;
-
-  // If user is created, ensure profile exists with correct role
-  if (data.user) {
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .upsert({
-        id: data.user.id,
-        email: data.user.email!,
-        role: role
-      });
-    
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Don't throw here as the user is already created
-    }
-  }
 
   return data;
 }
@@ -98,41 +82,4 @@ export async function getCurrentUser() {
   }
   
   return { ...user, profile };
-}
-
-// Superadmin bypass functions
-export async function createSuperadminKey(): Promise<string> {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const secret = process.env.SUPERADMIN_SECRET || 'default_secret_key_change_in_production';
-  
-  const hash = require('crypto')
-    .createHash('md5')
-    .update(`${timestamp}_${secret}`)
-    .digest('hex')
-    .toUpperCase();
-  
-  return `SUPER_ADMIN_${timestamp}_${hash}`;
-}
-
-export async function validateSuperadminAccess(key: string): Promise<boolean> {
-  const pattern = /^SUPER_ADMIN_\d{10}_[A-F0-9]{32}$/;
-  if (!pattern.test(key)) return false;
-  
-  const parts = key.split('_');
-  const timestamp = parseInt(parts[2]);
-  const hash = parts[3];
-  
-  // Check if timestamp is within last 24 hours
-  const now = Math.floor(Date.now() / 1000);
-  const timeDiff = now - timestamp;
-  if (timeDiff > 86400 || timeDiff < -300) return false;
-  
-  const secret = process.env.SUPERADMIN_SECRET || 'default_secret_key_change_in_production';
-  const expectedHash = require('crypto')
-    .createHash('md5')
-    .update(`${timestamp}_${secret}`)
-    .digest('hex')
-    .toUpperCase();
-  
-  return hash === expectedHash;
 }

@@ -51,14 +51,9 @@ CREATE POLICY "Users can update own stores"
   TO authenticated
   USING (auth.uid() = user_id);
 
+-- CORRECTED: The admin policy now uses a non-recursive JWT check.
 CREATE POLICY "Admins can read all stores"
   ON stores
   FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+  USING ( (auth.jwt() ->> 'role') = 'admin' );
