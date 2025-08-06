@@ -92,6 +92,13 @@ export async function sendPasswordReset(email: string): Promise<ActionResult> {
     }
 }
 
+
+/**
+ * Defines the possible roles for a user.
+ */
+export type UserRole = 'client' | 'admin';
+
+
 /**
  * Invite a new user by email
  */
@@ -102,7 +109,6 @@ export async function inviteUser(email: string, role: 'client' | 'admin' = 'clie
 
         const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
             data: { role: role },
-            app_metadata: { role: role },
             redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`
         });
 
@@ -246,9 +252,12 @@ export async function updateUserAppMetadata(userId: string, role: 'client' | 'ad
         // CORRECTED: This is the only line changed in this function.
         const supabase = await createClient({ useServiceRole: true });
 
-        // Use admin API to update user app_metadata
+        // Use admin API to update both app_metadata and user_metadata
         const { data, error } = await supabase.auth.admin.updateUserById(userId, {
             app_metadata: {
+                role: role
+            },
+            user_metadata: {
                 role: role
             }
         });
@@ -257,20 +266,20 @@ export async function updateUserAppMetadata(userId: string, role: 'client' | 'ad
             console.error('Error updating user app_metadata:', error);
             return {
                 success: false,
-                message: 'Failed to update user app_metadata',
+                message: 'Failed to update user metadata',
                 error: error.message
             };
         }
 
         return {
             success: true,
-            message: `User app_metadata successfully updated with role: ${role}`
+            message: `User metadata successfully updated with role: ${role}`
         };
     } catch (error: any) {
         console.error('Unexpected error in updateUserAppMetadata:', error);
         return {
             success: false,
-            message: 'An unexpected error occurred while updating user app_metadata',
+            message: 'An unexpected error occurred while updating user metadata',
             error: error.message
         };
     }
@@ -316,6 +325,9 @@ export async function syncAllUsersAppMetadata(): Promise<ActionResult> {
                 const { error } = await supabase.auth.admin.updateUserById(profile.id, {
                     app_metadata: {
                         role: profile.role
+                    },
+                    user_metadata: {
+                        role: profile.role
                     }
                 });
 
@@ -333,13 +345,13 @@ export async function syncAllUsersAppMetadata(): Promise<ActionResult> {
 
         return {
             success: true,
-            message: `Synced app_metadata for ${successCount} users. ${errorCount} errors.`
+            message: `Synced metadata for ${successCount} users. ${errorCount} errors.`
         };
     } catch (error: any) {
         console.error('Unexpected error in syncAllUsersAppMetadata:', error);
         return {
             success: false,
-            message: 'An unexpected error occurred while syncing user app_metadata',
+            message: 'An unexpected error occurred while syncing user metadata',
             error: error.message
         };
     }

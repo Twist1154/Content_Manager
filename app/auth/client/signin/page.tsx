@@ -1,10 +1,12 @@
 import { AuthForm } from '@/components/auth/AuthForm';
 import { BackButton } from '@/components/ui/BackButton';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { ToastProvider } from '@/components/ui/Toast';
 import Link from 'next/link';
 
 export default function ClientSignIn() {
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-4">
@@ -38,5 +40,6 @@ export default function ClientSignIn() {
         </div>
       </div>
     </div>
+    </ToastProvider>
   );
 }

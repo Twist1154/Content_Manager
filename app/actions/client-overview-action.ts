@@ -44,13 +44,19 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
 
         // IMPROVEMENT: Run our main data-fetching operations concurrently for speed.
         const [statsData, recentClientsData] = await Promise.all([
-            // Query 1: Get all the data needed for the stats dashboard.
-            supabase.from('profiles').select('id, content(user_id, created_at, start_date, end_date)').eq('role', 'client'),
-            // Query 2: Get the 6 most recent clients with their related stores.
-            supabase.from('profiles').select(`
+            supabase
+                .from('profiles')
+                .select('id, content(user_id, created_at, start_date, end_date)')
+                .eq('role', 'client'),
+
+            supabase
+                .from('profiles')
+                .select(`
                 id, email, role, created_at,
                 stores (id, name, brand_company)
-            `).eq('role', 'client').order('created_at', { ascending: false }).limit(6)
+                `)
+                .eq('role', 'client')
+                .order('created_at', { ascending: false }),
         ]);
 
         if (statsData.error) throw statsData.error;
@@ -60,12 +66,15 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
         const allProfilesWithContent = statsData.data || [];
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
         let totalUploads = 0;
         let recentActivity = 0;
         const activeClientIds = new Set<string>();
         
         allProfilesWithContent.forEach(profile => {
+            if (Array.isArray(profile.content)) {
             totalUploads += profile.content.length;
+
             profile.content.forEach(c => {
                 const createdAt = new Date(c.created_at);
                 if (createdAt >= oneWeekAgo) {
@@ -73,6 +82,7 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
                     activeClientIds.add(c.user_id);
         }
         });
+            }
             });
 
         const stats: OverviewStats = {
@@ -86,13 +96,15 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
         const recentProfiles = recentClientsData.data || [];
         const clients: ClientOverview[] = recentProfiles.map(profile => {
             // Find the content for this specific client from our stats data
-            const profileContent = allProfilesWithContent.find(p => p.id === profile.id)?.content || [];
+            const profileContent =
+                allProfilesWithContent.find(p => p.id === profile.id)?.content || [];
 
-            // This is the only part that needs changing
-            let latestUploadDate: string | undefined = undefined; // Initialize as undefined
+            let latestUploadDate: string | undefined = undefined;
             if (profileContent.length > 0) {
                 latestUploadDate = profileContent.reduce((latest, current) =>
-                    new Date(current.created_at) > new Date(latest.created_at) ? current : latest
+                    new Date(current.created_at) > new Date(latest.created_at)
+                        ? current
+                        : latest
                 ).created_at;
                 }
 
@@ -128,7 +140,7 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
                 totalUploads: 0,
                 recentActivity: 0
             },
-            error: error.message || 'An unexpected error occurred.'
+            error: error.message || 'An unexpected error occurred.',
         };
     }
 }

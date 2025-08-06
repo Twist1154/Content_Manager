@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { BackButton } from '@/components/ui/BackButton';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Key, AlertCircle, CheckCircle } from 'lucide-react';
+import { getUserSession, updateUserPassword } from '@/app/actions/auth-actions';
 
 export default function ResetPasswordPage() {
     const [password, setPassword] = useState('');
@@ -20,16 +20,15 @@ export default function ResetPasswordPage() {
 
     const router = useRouter();
     const searchParams = useSearchParams();
-    const supabase = createClient();
 
     useEffect(() => {
         // Check if we have the necessary tokens from the URL
         const checkSession = async () => {
             try {
-                const { data: { session }, error } = await supabase.auth.getSession();
+                const result = await getUserSession();
 
-                if (error || !session) {
-                    setError('Invalid or expired reset link. Please request a new password reset.');
+                if (!result.success || !result.session) {
+                    setError(result.error || 'Invalid or expired reset link. Please request a new password reset.');
                 }
             } catch (err) {
                 setError('Failed to validate reset link.');
@@ -39,7 +38,7 @@ export default function ResetPasswordPage() {
         };
 
         checkSession();
-    }, [supabase.auth]);
+    }, []);
 
     const validatePassword = (password: string): string | null => {
         if (password.length < 8) {
@@ -70,12 +69,10 @@ export default function ResetPasswordPage() {
         setLoading(true);
 
         try {
-            const { error } = await supabase.auth.updateUser({
-                password: password
-            });
+            const result = await updateUserPassword(password);
 
-            if (error) {
-                throw error;
+            if (!result.success) {
+                throw new Error(result.error);
             }
 
             setSuccess(true);
