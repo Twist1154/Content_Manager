@@ -1,3 +1,4 @@
+/*
 // components/auth/OneTapComponent.tsx
 
 'use client';
@@ -162,17 +163,17 @@ const OneTapComponent = () => {
 
     return (
         <>
-            {/* The `onReady` or `onLoad` prop is the most robust way to know the script is ready */}
+            {/!* The `onReady` or `onLoad` prop is the most robust way to know the script is ready *!/}
             <Script
                 src="https://accounts.google.com/gsi/client"
         onLoad={handleScriptLoad}
         onError={handleScriptError}
         strategy="afterInteractive"
             />
-            {/* The div below is not strictly necessary for the One Tap prompt itself, but can be used for custom positioning */}
+            {/!* The div below is not strictly necessary for the One Tap prompt itself, but can be used for custom positioning *!/}
             <div id="oneTap" className="fixed top-0 right-0 z-[100]" />
         </>
   );
 };
 
-export default OneTapComponent;
+export default OneTapComponent;*/

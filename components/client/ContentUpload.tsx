@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Upload, File, Calendar, Repeat } from 'lucide-react';
+import { Upload, File } from 'lucide-react';
+import { insertContent } from '@/app/actions/data-actions';
+import type { ContentData } from '@/app/actions/data-actions';
 
 interface ContentUploadProps {
   userId: string;
@@ -27,8 +29,8 @@ export function ContentUpload({ userId, storeId, onSuccess }: ContentUploadProps
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Memoize the supabase client to prevent it from being recreated on every render
-  const supabase = useMemo(() => createClient(), []);
+  // Create supabase client for storage operations (client-side only)
+  const supabase = createClient();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
@@ -82,7 +84,7 @@ export function ContentUpload({ userId, storeId, onSuccess }: ContentUploadProps
       for (const file of files) {
         const fileUrl = await uploadFile(file);
 
-        const { error } = await supabase.from('content').insert({
+        const contentData: ContentData = {
           store_id: storeId,
           user_id: userId,
           title: formData.title || file.name,
@@ -93,9 +95,13 @@ export function ContentUpload({ userId, storeId, onSuccess }: ContentUploadProps
           end_date: formData.end_date,
           recurrence_type: formData.recurrence_type,
           recurrence_days: formData.recurrence_days.length > 0 ? formData.recurrence_days : null,
-        });
+        };
 
-        if (error) throw error;
+        const result = await insertContent(contentData);
+
+        if (!result.success) {
+          throw new Error(result.error);
+        }
       }
 
       setFiles([]);

@@ -6,7 +6,9 @@ import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { useToast } from '@/components/ui/Toast';
 import { Chrome } from 'lucide-react';
+import { signInUser, registerUser, getUserAndProfile } from '@/app/actions/auth-actions';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -20,6 +22,7 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { addToast } = useToast();
 
   // Memoize the supabase client to prevent it from being recreated on every render
   const supabase = useMemo(() => createClient(), []);
@@ -43,7 +46,13 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
       if (error) throw error;
     } catch (err: any) {
       console.error('Google authentication error:', err);
-      setError(err.message || 'Google authentication failed. Please try again.');
+      const errorMessage = err.message || 'Google authentication failed. Please try again.';
+      setError(errorMessage);
+      addToast({
+        type: 'error',
+        title: 'Google Sign In Failed',
+        message: errorMessage
+      });
       setGoogleLoading(false);
     }
   };
@@ -79,76 +88,6 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
     return data;
   };
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-    return data;
-  };
-
-  const getCurrentUserWithRetry = async (maxRetries = 3): Promise<any> => {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) return null;
-
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error(`Profile fetch attempt ${i + 1}:`, error);
-
-          if (i === maxRetries - 1) {
-            console.log('Creating new profile for user:', user.id);
-            // Create profile if it doesn't exist
-            const { data: newProfile, error: insertError } = await supabase
-              .from('profiles')
-              .insert({
-                id: user.id,
-                email: user.email!,
-                role: userType // Use the expected role based on sign-in type
-              })
-              .select()
-              .single();
-
-            if (insertError) {
-              console.error('Error creating profile:', insertError);
-              // Return user with default profile structure
-              return {
-                ...user, 
-                profile: { 
-                  id: user.id, 
-                  email: user.email!, 
-                  role: userType,
-                  created_at: new Date().toISOString()
-                } 
-              };
-            }
-
-            return { ...user, profile: newProfile };
-          }
-          // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
-          continue;
-        }
-
-        return { ...user, profile };
-      } catch (err) {
-        console.error(`getCurrentUserWithRetry attempt ${i + 1} failed:`, err);
-        if (i === maxRetries - 1) throw err;
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1))); // Exponential backoff
-      }
-    }
-    return null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -156,21 +95,33 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
 
     try {
       if (mode === 'signup') {
-        const result = await signUp(email, password, userType);
-        if (result.user) {
+        const result = await registerUser(email, password, userType);
+        if (result.success) {
+          addToast({
+            type: 'success',
+            title: 'Account Created Successfully',
+            message: `Welcome! Your ${userType} account has been created.`
+          });
           // For signup, redirect based on userType immediately
           router.push(userType === 'admin' ? '/admin' : '/dashboard');
           return;
+        } else {
+          throw new Error(result.error || result.message);
         }
       } else {
-        const result = await signIn(email, password);
-        if (result.user) {
+        const result = await signInUser(email, password);
+        if (result.success && result.user) {
+          addToast({
+            type: 'success',
+            title: 'Sign In Successful',
+            message: 'Welcome back!'
+          });
           // For signin, get user profile to determine redirect
           try {
-            const currentUser = await getCurrentUserWithRetry();
-            console.log('Current user after signin:', currentUser);
+            const userResult = await getUserAndProfile(result.user.id, userType);
+            console.log('Current user after signin:', userResult.user);
 
-            if (currentUser?.profile?.role === 'admin') {
+            if (userResult.success && userResult.user?.profile?.role === 'admin') {
               router.push('/admin');
             } else {
               router.push('/dashboard');
@@ -180,11 +131,22 @@ export function AuthForm({ mode, userType = 'client' }: AuthFormProps) {
             // Fallback: redirect based on the sign-in page type
             router.push(userType === 'admin' ? '/admin' : '/dashboard');
           }
+        } else {
+          const errorMessage = result.error || 'Sign in failed';
+          throw new Error(errorMessage);
         }
       }
     } catch (err: any) {
       console.error('Authentication error:', err);
-      setError(err.message || 'Authentication failed. Please try again.');
+      const errorMessage = err.message || 'Authentication failed. Please try again.';
+      setError(errorMessage);
+
+      // Show toast notification for the error
+      addToast({
+        type: 'error',
+        title: mode === 'signin' ? 'Sign In Failed' : 'Sign Up Failed',
+        message: errorMessage
+      });
     } finally {
       setLoading(false);
     }
