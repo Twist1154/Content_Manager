@@ -2,8 +2,7 @@
 
 'use server';
 
-import {createClient} from '@/utils/supabase/server';
-import {SupabaseClient} from "@supabase/supabase-js";
+import { createClient } from '@/utils/supabase/server';
 
 // Types for better type safety
 export interface StoreData {
@@ -37,9 +36,9 @@ export interface ContentStats {
 // User role fetching
 export async function fetchUserRole(userId: string): Promise<{ success: boolean; role?: string; error?: string }> {
     try {
-        const supabase = await createClient() as SupabaseClient;
+        const supabase = await createClient();
 
-        const {data: profile, error} = await supabase
+        const { data: profile, error } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', userId)
@@ -47,22 +46,22 @@ export async function fetchUserRole(userId: string): Promise<{ success: boolean;
 
         if (error) {
             console.error('Error fetching user role:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true, role: profile?.role};
+        return { success: true, role: profile?.role };
     } catch (error: any) {
         console.error('Unexpected error fetching user role:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
 // Store management
 export async function addStore(storeData: StoreData, userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-        const supabase = await createClient() as SupabaseClient;
+        const supabase = await createClient();
 
-        const {error} = await supabase.from('stores').insert({
+        const { error } = await supabase.from('stores').insert({
             user_id: userId,
             name: storeData.name,
             brand_company: storeData.brand_company,
@@ -73,48 +72,44 @@ export async function addStore(storeData: StoreData, userId: string): Promise<{ 
 
         if (error) {
             console.error('Error adding store:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true};
+        return { success: true };
     } catch (error: any) {
         console.error('Unexpected error adding store:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
-export async function fetchStoresByUserId(userId: string): Promise<{
-    success: boolean;
-    stores?: any[];
-    error?: string
-}> {
+export async function fetchStoresByUserId(userId: string): Promise<{ success: boolean; stores?: any[]; error?: string }> {
     try {
-        const supabase = await createClient() as SupabaseClient;
+        const supabase = await createClient();
 
-        const {data, error} = await supabase
+        const { data, error } = await supabase
             .from('stores')
             .select('*')
             .eq('user_id', userId)
-            .order('created_at', {ascending: false});
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching stores:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true, stores: data || []};
+        return { success: true, stores: data || [] };
     } catch (error: any) {
         console.error('Unexpected error fetching stores:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
 // Content management
 export async function insertContent(contentData: ContentData): Promise<{ success: boolean; error?: string }> {
     try {
-        const supabase = await createClient() as SupabaseClient;
+        const supabase = await createClient();
 
-        const {error} = await supabase.from('content').insert({
+        const { error } = await supabase.from('content').insert({
             store_id: contentData.store_id,
             user_id: contentData.user_id,
             title: contentData.title,
@@ -129,50 +124,46 @@ export async function insertContent(contentData: ContentData): Promise<{ success
 
         if (error) {
             console.error('Error inserting content:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true};
+        return { success: true };
     } catch (error: any) {
         console.error('Unexpected error inserting content:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
-export async function fetchContentForUser(userId: string): Promise<{
-    success: boolean;
-    content?: any[];
-    error?: string
-}> {
+export async function fetchContentForUser(userId: string): Promise<{ success: boolean; content?: any[]; error?: string }> {
     try {
-        const supabase = await createClient() as SupabaseClient;
+        const supabase = await createClient();
 
-        const {data, error} = await supabase
+        const { data, error } = await supabase
             .from('content')
             .select(`
         *,
         stores (name, brand_company)
       `)
             .eq('user_id', userId)
-            .order('created_at', {ascending: false});
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching content for user:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true, content: data || []};
+        return { success: true, content: data || [] };
     } catch (error: any) {
         console.error('Unexpected error fetching content for user:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
 export async function fetchAllContent(): Promise<{ success: boolean; content?: any[]; error?: string }> {
     try {
-        const supabase = await createClient({useServiceRole: true}) as SupabaseClient;
+    const supabase = await createClient({ useServiceRole: true });
 
-        const {data, error} = await supabase
+        const { data, error } = await supabase
             .from('content')
             .select(`
         *,
@@ -185,36 +176,32 @@ export async function fetchAllContent(): Promise<{ success: boolean; content?: a
         ),
         profiles (email)
       `)
-            .order('created_at', {ascending: false});
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error fetching all content:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true, content: data || []};
+        return { success: true, content: data || [] };
     } catch (error: any) {
         console.error('Unexpected error fetching all content:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
-export async function fetchContentStatsByUserId(userId: string): Promise<{
-    success: boolean;
-    stats?: ContentStats;
-    error?: string
-}> {
+export async function fetchContentStatsByUserId(userId: string): Promise<{ success: boolean; stats?: ContentStats; error?: string }> {
     try {
-        const supabase = await createClient() as SupabaseClient;
+        const supabase = await createClient();
 
-        const {data, error} = await supabase
+        const { data, error } = await supabase
             .from('content')
             .select('type, created_at, start_date, end_date')
             .eq('user_id', userId);
 
         if (error) {
             console.error('Error fetching content stats:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
         const now = new Date();
@@ -232,22 +219,18 @@ export async function fetchContentStatsByUserId(userId: string): Promise<{
             ).length || 0,
         };
 
-        return {success: true, stats};
+        return { success: true, stats };
     } catch (error: any) {
         console.error('Unexpected error fetching content stats:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
-export async function fetchClientProfileById(clientId: string): Promise<{
-    success: boolean;
-    profile?: any;
-    error?: string
-}> {
+export async function fetchClientProfileById(clientId: string): Promise<{ success: boolean; profile?: any; error?: string }> {
     try {
-        const supabase = await createClient({useServiceRole: true}) as SupabaseClient;
+    const supabase = await createClient({ useServiceRole: true });
 
-        const {data, error} = await supabase
+        const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', clientId)
@@ -256,125 +239,125 @@ export async function fetchClientProfileById(clientId: string): Promise<{
 
         if (error) {
             console.error('Error fetching client profile:', error);
-            return {success: false, error: error.message};
+            return { success: false, error: error.message };
         }
 
-        return {success: true, profile: data};
+        return { success: true, profile: data };
     } catch (error: any) {
         console.error('Unexpected error fetching client profile:', error);
-        return {success: false, error: error.message};
+        return { success: false, error: error.message };
     }
 }
 
 // Get comprehensive admin dashboard data
 export async function fetchAdminDashboardData(): Promise<{
-    success: boolean;
-    data?: {
-        totalClients: number;
-        totalStores: number;
-        totalContent: number;
-        recentClients: any[];
-        recentContent: any[];
-    };
-    error?: string
+  success: boolean;
+  data?: {
+    totalClients: number;
+    totalStores: number;
+    totalContent: number;
+    recentClients: any[];
+    recentContent: any[];
+  };
+  error?: string
 }> {
-    try {
-        const supabase = await createClient({useServiceRole: true}) as SupabaseClient;
+  try {
+    const supabase = await createClient({ useServiceRole: true });
 
-        // Fetch all data in parallel for better performance
-        const [clientsResult, storesResult, contentResult] = await Promise.all([
-            supabase
-                .from('profiles')
-                .select('*')
-                .eq('role', 'client')
-                .order('created_at', {ascending: false}),
-            supabase
-                .from('stores')
-                .select(`
+    // Fetch all data in parallel for better performance
+    const [clientsResult, storesResult, contentResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'client')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('stores')
+        .select(`
           *,
           profiles (email, role)
         `)
-                .order('created_at', {ascending: false}),
-            supabase
-                .from('content')
-                .select(`
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('content')
+        .select(`
           *,
           stores (name, brand_company),
           profiles (email)
         `)
-                .order('created_at', {ascending: false})
-                .limit(10)
-        ]);
+        .order('created_at', { ascending: false })
+        .limit(10)
+    ]);
 
-        if (clientsResult.error) throw clientsResult.error;
-        if (storesResult.error) throw storesResult.error;
-        if (contentResult.error) throw contentResult.error;
+    if (clientsResult.error) throw clientsResult.error;
+    if (storesResult.error) throw storesResult.error;
+    if (contentResult.error) throw contentResult.error;
 
-        const clients = clientsResult.data || [];
-        const stores = storesResult.data || [];
-        const content = contentResult.data || [];
+    const clients = clientsResult.data || [];
+    const stores = storesResult.data || [];
+    const content = contentResult.data || [];
 
-        return {
-            success: true,
-            data: {
-                totalClients: clients.length,
-                totalStores: stores.length,
-                totalContent: content.length,
-                recentClients: clients.slice(0, 5),
-                recentContent: content
-            }
-        };
-    } catch (error: any) {
-        console.error('Unexpected error fetching admin dashboard data:', error);
-        return {success: false, error: error.message};
-    }
+    return {
+      success: true,
+      data: {
+        totalClients: clients.length,
+        totalStores: stores.length,
+        totalContent: content.length,
+        recentClients: clients.slice(0, 5),
+        recentContent: content
+      }
+    };
+  } catch (error: any) {
+    console.error('Unexpected error fetching admin dashboard data:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 // Fetch content statistics for admin overview
 export async function fetchAdminContentStats(): Promise<{
-    success: boolean;
-    stats?: {
-        totalContent: number;
-        activeContent: number;
-        scheduledContent: number;
-        archivedContent: number;
-        contentByType: { [key: string]: number };
-    };
-    error?: string
+  success: boolean;
+  stats?: {
+    totalContent: number;
+    activeContent: number;
+    scheduledContent: number;
+    archivedContent: number;
+    contentByType: { [key: string]: number };
+  };
+  error?: string
 }> {
-    try {
-        const supabase = await createClient({useServiceRole: true}) as SupabaseClient;
+  try {
+    const supabase = await createClient({ useServiceRole: true });
 
-        const {data: content, error} = await supabase
-            .from('content')
-            .select('type, start_date, end_date, created_at');
+    const { data: content, error } = await supabase
+      .from('content')
+      .select('type, start_date, end_date, created_at');
 
-        if (error) {
-            console.error('Error fetching admin content stats:', error);
-            return {success: false, error: error.message};
-        }
-
-        const now = new Date();
-        const stats = {
-            totalContent: content?.length || 0,
-            activeContent: content?.filter(item =>
-                new Date(item.start_date) <= now && new Date(item.end_date) >= now
-            ).length || 0,
-            scheduledContent: content?.filter(item =>
-                new Date(item.start_date) > now
-            ).length || 0,
-            archivedContent: content?.filter(item =>
-                new Date(item.end_date) < now
-            ).length || 0,
-            contentByType: content?.reduce((acc, item) => {
-                acc[item.type] = (acc[item.type] || 0) + 1;
-                return acc;
-            }, {} as { [key: string]: number }) || {}
-        };
-
-        return {success: true, stats};
-    } catch (error: any) {
-        console.error('Unexpected error fetching admin content stats:', error);
-        return {success: false, error: error.message};
+    if (error) {
+      console.error('Error fetching admin content stats:', error);
+      return { success: false, error: error.message };
     }
+
+    const now = new Date();
+    const stats = {
+      totalContent: content?.length || 0,
+      activeContent: content?.filter(item =>
+        new Date(item.start_date) <= now && new Date(item.end_date) >= now
+      ).length || 0,
+      scheduledContent: content?.filter(item =>
+        new Date(item.start_date) > now
+      ).length || 0,
+      archivedContent: content?.filter(item =>
+        new Date(item.end_date) < now
+      ).length || 0,
+      contentByType: content?.reduce((acc, item) => {
+        acc[item.type] = (acc[item.type] || 0) + 1;
+        return acc;
+      }, {} as { [key: string]: number }) || {}
+    };
+
+    return { success: true, stats };
+  } catch (error: any) {
+    console.error('Unexpected error fetching admin content stats:', error);
+    return { success: false, error: error.message };
+  }
 }
