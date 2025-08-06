@@ -19,7 +19,7 @@ export async function registerUser(
     role: 'client' | 'admin' = 'client'
 ): Promise<AuthResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        const supabase = await createClient({ useServiceRole: true });// Request service role key for admin operations
 
         // First, create the user with user_metadata
         const { data, error } = await supabase.auth.admin.createUser({
@@ -91,7 +91,7 @@ export async function updateUserAfterOAuth(
     role: 'client' | 'admin' = 'client'
 ): Promise<AuthResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        const supabase = await createClient({ useServiceRole: true }); // Request service role key for admin operations
 
         // Update user's app_metadata
         const { error } = await supabase.auth.admin.updateUserById(userId, {

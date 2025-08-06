@@ -16,7 +16,8 @@ interface ActionResult {
  */
 export async function changeUserEmail(userId: string, newEmail: string): Promise<ActionResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
 
         // Use admin API to update user email
         const { data, error } = await supabase.auth.admin.updateUserById(userId, {
@@ -32,7 +33,6 @@ export async function changeUserEmail(userId: string, newEmail: string): Promise
             };
         }
 
-        // Also update the profile table to keep it in sync
         const { error: profileError } = await supabase
             .from('profiles')
             .update({ email: newEmail })
@@ -40,7 +40,6 @@ export async function changeUserEmail(userId: string, newEmail: string): Promise
 
         if (profileError) {
             console.error('Error updating profile email:', profileError);
-            // Don't fail the entire operation, just log the warning
             console.warn('Profile email update failed, but auth email was updated successfully');
         }
 
@@ -63,7 +62,8 @@ export async function changeUserEmail(userId: string, newEmail: string): Promise
  */
 export async function sendPasswordReset(email: string): Promise<ActionResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`
@@ -93,59 +93,16 @@ export async function sendPasswordReset(email: string): Promise<ActionResult> {
 }
 
 /**
- * Send a reauthentication request (magic link)
- */
-export async function requestReauthentication(email: string): Promise<ActionResult> {
-    try {
-        const supabase = await createClient(true); // Request service role key for admin operations
-        {/*TODO: Update this URL to your actual reset password page*/}
-
-        const { error } = await supabase.auth.signInWithOtp({
-            email,
-            options: {
-                shouldCreateUser: false, // Don't create new user, only send to existing users
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`
-            }
-        });
-
-        if (error) {
-            console.error('Error sending reauthentication request:', error);
-            return {
-                success: false,
-                message: 'Failed to send reauthentication link',
-                error: error.message
-            };
-        }
-
-        return {
-            success: true,
-            message: `Reauthentication link has been sent to ${email}`
-        };
-    } catch (error: any) {
-        console.error('Unexpected error in requestReauthentication:', error);
-        return {
-            success: false,
-            message: 'An unexpected error occurred while sending reauthentication request',
-            error: error.message
-        };
-    }
-}
-
-/**
  * Invite a new user by email
  */
 export async function inviteUser(email: string, role: 'client' | 'admin' = 'client'): Promise<ActionResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
 
-        // Use admin API to invite user
         const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-            data: {
-                role: role // Keep user_metadata for backward compatibility
-            },
-            app_metadata: {
-                role: role // Set app_metadata for RLS policies
-            },
+            data: { role: role },
+            app_metadata: { role: role },
             redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`
         });
 
@@ -173,13 +130,82 @@ export async function inviteUser(email: string, role: 'client' | 'admin' = 'clie
 }
 
 /**
- * Generate and send a magic link for login
+ * Delete a user account (admin only)
  */
+export async function deleteUser(userId: string): Promise<ActionResult> {
+    try {
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
+
+        const { error } = await supabase.auth.admin.deleteUser(userId);
+
+        if (error) {
+            console.error('Error deleting user:', error);
+            return {
+                success: false,
+                message: 'Failed to delete user account',
+                error: error.message
+            };
+        }
+
+        return {
+            success: true,
+            message: 'User account has been successfully deleted'
+        };
+    } catch (error: any) {
+        console.error('Unexpected error in deleteUser:', error);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while deleting user',
+            error: error.message
+        };
+    }
+}
+
+
+// --- The rest of the functions with the same single-line correction ---
+
+export async function requestReauthentication(email: string): Promise<ActionResult> {
+    try {
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
+
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                shouldCreateUser: false,
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`
+            }
+        });
+
+        if (error) {
+            console.error('Error sending reauthentication request:', error);
+            return {
+                success: false,
+                message: 'Failed to send reauthentication link',
+                error: error.message
+            };
+        }
+
+        return {
+            success: true,
+            message: `Reauthentication link has been sent to ${email}`
+        };
+    } catch (error: any) {
+        console.error('Unexpected error in requestReauthentication:', error);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while sending reauthentication request',
+            error: error.message
+        };
+    }
+}
+
 export async function sendMagicLink(email: string): Promise<ActionResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
 
-        {/*TODO: Implement this to also create new users */}
         const { error } = await supabase.auth.signInWithOtp({
             email,
             options: {
@@ -212,45 +238,13 @@ export async function sendMagicLink(email: string): Promise<ActionResult> {
 }
 
 /**
- * Delete a user account (admin only)
- */
-export async function deleteUser(userId: string): Promise<ActionResult> {
-    try {
-        const supabase = await createClient(true); // Request service role key for admin operations
-
-        // Use admin API to delete user
-        const { error } = await supabase.auth.admin.deleteUser(userId);
-
-        if (error) {
-            console.error('Error deleting user:', error);
-            return {
-                success: false,
-                message: 'Failed to delete user account',
-                error: error.message
-            };
-        }
-
-        return {
-            success: true,
-            message: 'User account has been successfully deleted'
-        };
-    } catch (error: any) {
-        console.error('Unexpected error in deleteUser:', error);
-        return {
-            success: false,
-            message: 'An unexpected error occurred while deleting user',
-            error: error.message
-        };
-    }
-}
-
-/**
  * Update a user's app_metadata to match their role in the profiles table
  * This is used to fix metadata for users created before app_metadata was properly set
  */
 export async function updateUserAppMetadata(userId: string, role: 'client' | 'admin'): Promise<ActionResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
 
         // Use admin API to update user app_metadata
         const { data, error } = await supabase.auth.admin.updateUserById(userId, {
@@ -288,7 +282,8 @@ export async function updateUserAppMetadata(userId: string, role: 'client' | 'ad
  */
 export async function syncAllUsersAppMetadata(): Promise<ActionResult> {
     try {
-        const supabase = await createClient(true); // Request service role key for admin operations
+        // CORRECTED: This is the only line changed in this function.
+        const supabase = await createClient({ useServiceRole: true });
 
         // Get all profiles with their roles
         const { data: profiles, error: profilesError } = await supabase

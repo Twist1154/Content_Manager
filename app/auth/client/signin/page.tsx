@@ -1,6 +1,7 @@
 import { AuthForm } from '@/components/auth/AuthForm';
 import { BackButton } from '@/components/ui/BackButton';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import Link from 'next/link';
 
 export default function ClientSignIn() {
   return (
@@ -22,6 +23,19 @@ export default function ClientSignIn() {
           <p className="text-gray-600 mt-2">Access your content management dashboard</p>
         </div>
         <AuthForm mode="signin" userType="client" />
+
+        {/* Sign up link */}
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-600">
+            Don&#39;t have an account?{' '}
+            <Link
+              href="/auth/client/signup"
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            >
+              Sign up here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

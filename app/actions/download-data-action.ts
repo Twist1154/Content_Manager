@@ -12,7 +12,7 @@ interface DownloadResult {
 
 export async function getClientDataAsCsv(clientId: string, clientEmail: string): Promise<DownloadResult> {
     try {
-        const supabase = await  createClient(); // Server client with admin rights
+        const supabase = await  createClient({ useServiceRole: true }); // Server client with admin rights
 
         const { data: content, error } = await supabase
             .from('content')
