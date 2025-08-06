@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
-import { registerUser } from '@/app/actions/auth-actions';
+import { registerUser, signInUser } from '@/app/actions/auth-actions';
 
 export async function signUp(email: string, password: string, role: 'client' | 'admin' = 'client') {
   // Use the server action to register the user with proper role handling
@@ -19,15 +19,13 @@ export async function signUp(email: string, password: string, role: 'client' | '
 }
 
 export async function signIn(email: string, password: string) {
-  const supabase = await createClient();
+  const result = await signInUser(email, password);
   
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  if (!result.success) {
+    throw new Error(result.error || 'Sign in failed');
+  }
 
-  if (error) throw error;
-  return data;
+  return { user: result.user };
 }
 
 export async function signOut() {
@@ -44,7 +42,11 @@ export async function getCurrentUser() {
   
   if (!user) return null;
 
-  const { data: profile, error } = await supabase
+  // Use service role for admin users to ensure they can access all data
+  const isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+  const supabaseClient = isAdmin ? await createClient({ useServiceRole: true }) : supabase;
+
+  const { data: profile, error } = await supabaseClient
     .from('profiles')
     .select('*')
     .eq('id', user.id)
@@ -54,12 +56,12 @@ export async function getCurrentUser() {
     console.error('Error fetching profile:', error);
     
     // If profile doesn't exist, create it with proper error handling
-    const { data: newProfile, error: insertError } = await supabase
+    const { data: newProfile, error: insertError } = await supabaseClient
       .from('profiles')
       .insert({
         id: user.id,
         email: user.email!,
-        role: 'client'
+        role: isAdmin ? 'admin' : 'client'
       })
       .select()
       .single();
@@ -72,7 +74,7 @@ export async function getCurrentUser() {
         profile: { 
           id: user.id, 
           email: user.email!, 
-          role: 'client' as const,
+          role: isAdmin ? ('admin' as const) : ('client' as const),
           created_at: new Date().toISOString()
         } 
       };
