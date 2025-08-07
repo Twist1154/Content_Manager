@@ -23,7 +23,9 @@ import {
     requestReauthentication,
     inviteUser,
     sendMagicLink,
-    deleteUser
+    deleteUser,
+    updateUserAppMetadata,
+    syncAllUsersAppMetadata
 } from '@/app/actions/user-management-actions';
 import {getAllClients} from "@/app/actions/get-clients-action";
 import type { Client } from '@/app/actions/get-clients-action';
@@ -57,6 +59,8 @@ export function AdminClientManagement() {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [activeAction, setActiveAction] = useState<string | null>(null);
+    const [showSyncModal, setShowSyncModal] = useState(false);
+    const [syncingAll, setSyncingAll] = useState(false);
 
     // Memoize the supabase client to prevent it from being recreated on every render
     const supabase = useMemo(() => createClient(), []);
@@ -279,6 +283,50 @@ export function AdminClientManagement() {
         }
     };
 
+    const handleSyncUserMetadata = async () => {
+        if (!selectedClient) return;
+
+        setIsSubmitting(true);
+        setActiveAction('syncMetadata');
+
+        try {
+            // Get the role from the profile to sync with app_metadata
+            const result = await updateUserAppMetadata(selectedClient.id, selectedClient.role as 'client' | 'admin');
+
+            if (result.success) {
+                showNotification('success', result.message);
+            } else {
+                showNotification('error', result.message);
+            }
+        } catch (error) {
+            showNotification('error', 'Failed to sync user metadata');
+        } finally {
+            setIsSubmitting(false);
+            setActiveAction(null);
+        }
+    };
+
+    const handleSyncAllUsersMetadata = async () => {
+        setSyncingAll(true);
+
+        try {
+            const result = await syncAllUsersAppMetadata();
+
+            if (result.success) {
+                showNotification('success', result.message);
+                setShowSyncModal(false);
+                // Refresh client list to reflect any changes
+                await fetchClients();
+            } else {
+                showNotification('error', result.message);
+            }
+        } catch (error) {
+            showNotification('error', 'Failed to sync all users metadata');
+        } finally {
+            setSyncingAll(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center p-8">
@@ -325,6 +373,17 @@ export function AdminClientManagement() {
                         >
                             <UserPlus className="w-4 h-4 mr-2" />
                             Invite Client
+                        </Button>
+                    </Tooltip>
+
+                    <Tooltip content="Sync all users' app_metadata with their profile roles" variant="dark">
+                        <Button
+                            onClick={() => setShowSyncModal(true)}
+                            variant="outline"
+                            className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                        >
+                            <Shield className="w-4 h-4 mr-2" />
+                            Sync All Roles
                         </Button>
                     </Tooltip>
                 </div>
@@ -672,6 +731,58 @@ export function AdminClientManagement() {
                                     className="flex-1"
                                 >
                                     {isSubmitting ? <LoadingSpinner size="sm" /> : 'Delete Account'}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {/* Sync All Users Modal */}
+            {showSyncModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <Card className="max-w-md w-full">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-blue-600">
+                                <Shield className="w-5 h-5" />
+                                Sync All User Roles
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-blue-800 text-sm">
+                                    <strong>What this does:</strong> This will update all user&apos;s app_metadata.role
+                                    to match their role in the profiles table. This ensures that Row Level Security
+                                    policies work correctly and users have the proper permissions.
+                                </p>
+                            </div>
+
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <p className="text-yellow-800 text-sm">
+                                    <strong>Note:</strong> This operation will affect all users in the system.
+                                    Users may need to sign out and sign back in for changes to take full effect.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowSyncModal(false)}
+                                    className="flex-1"
+                                    disabled={syncingAll}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSyncAllUsersMetadata}
+                                    disabled={syncingAll}
+                                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                                >
+                                    {syncingAll ? (
+                                        <LoadingSpinner size="sm" text="Syncing..." />
+                                    ) : (
+                                        'Sync All Users'
+                                    )}
                                 </Button>
                             </div>
                         </CardContent>

@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import { StoreForm } from '@/components/client/StoreForm';
 import { ContentUpload } from '@/components/client/ContentUpload';
@@ -8,58 +7,7 @@ import { ContentDashboard } from '@/components/client/ContentDashboard';
 import { ClientHeader } from '@/components/client/ClientHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Store, Upload, TrendingUp, Calendar } from 'lucide-react';
-
-// --- Helper Functions (No changes here) ---
-
-async function getStores(userId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('stores')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
-}
-
-async function getContentStats(userId: string) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('content')
-    .select('type, created_at, start_date, end_date')
-    .eq('user_id', userId);
-
-  if (error) throw error;
-
-  const now = new Date();
-  return {
-    total: data?.length || 0,
-    active: data?.filter(item =>
-      new Date(item.start_date) <= now && new Date(item.end_date) >= now
-    ).length || 0,
-    scheduled: data?.filter(item =>
-      new Date(item.start_date) > now
-    ).length || 0,
-    thisMonth: data?.filter(item =>
-      new Date(item.created_at).getMonth() === now.getMonth() &&
-      new Date(item.created_at).getFullYear() === now.getFullYear()
-    ).length || 0,
-  };
-}
-
-async function getClientProfile(clientId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', clientId)
-    .eq('role', 'client')
-    .single();
-  if (error) throw error;
-  return data;
-}
+import { fetchStoresByUserId, fetchContentStatsByUserId, fetchClientProfileById } from '@/app/actions/data-actions';
 
 // --- Page Component ---
 
@@ -88,23 +36,34 @@ export default async function Dashboard(
   // Wrap all data fetching in a single try...catch block for robust error handling.
   try {
   if (isAdminView) {
-      // First, get the client profile, as it's a prerequisite for the other fetches.
-      const clientProfile = await getClientProfile(adminViewClientId);
-      if (!clientProfile) notFound();
+      // Get the client profile using centralized function
+      const profileResult = await fetchClientProfileById(adminViewClientId);
+      if (!profileResult.success || !profileResult.profile) notFound();
 
-      viewingClient = { ...user, profile: clientProfile };
+      viewingClient = { ...user, profile: profileResult.profile };
       [stores, contentStats] = await Promise.all([
-        getStores(adminViewClientId),
-        getContentStats(adminViewClientId),
+        fetchStoresByUserId(adminViewClientId),
+        fetchContentStatsByUserId(adminViewClientId),
       ]);
 
     } else {
       // Also apply parallel fetching for the normal user view.
       [stores, contentStats] = await Promise.all([
-        getStores(user.id),
-        getContentStats(user.id),
+        fetchStoresByUserId(user.id),
+        fetchContentStatsByUserId(user.id),
       ]);
     }
+
+    // Handle results from centralized functions
+    if (!stores.success || !contentStats.success) {
+      console.error('Error fetching dashboard data:', stores.error || contentStats.error);
+      notFound();
+    }
+
+    // Extract the actual data
+    stores = stores.stores || [];
+    contentStats = contentStats.stats || { total: 0, active: 0, scheduled: 0, thisMonth: 0 };
+
     } catch (error) {
     // Log the error to the server console for debugging.
     console.error("Dashboard data fetching failed:", error);
