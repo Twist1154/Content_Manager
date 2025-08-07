@@ -3,6 +3,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import {SupabaseClient} from "@supabase/supabase-js";
 
 interface ActionResult {
     success: boolean;
@@ -17,7 +18,7 @@ interface ActionResult {
 export async function changeUserEmail(userId: string, newEmail: string): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         // Use admin API to update user email
         const { data, error } = await supabase.auth.admin.updateUserById(userId, {
@@ -63,7 +64,7 @@ export async function changeUserEmail(userId: string, newEmail: string): Promise
 export async function sendPasswordReset(email: string): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`
@@ -105,7 +106,7 @@ export type UserRole = 'client' | 'admin';
 export async function inviteUser(email: string, role: 'client' | 'admin' = 'client'): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
             data: { role: role },
@@ -141,7 +142,7 @@ export async function inviteUser(email: string, role: 'client' | 'admin' = 'clie
 export async function deleteUser(userId: string): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         const { error } = await supabase.auth.admin.deleteUser(userId);
 
@@ -174,7 +175,7 @@ export async function deleteUser(userId: string): Promise<ActionResult> {
 export async function requestReauthentication(email: string): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         const { error } = await supabase.auth.signInWithOtp({
             email,
@@ -210,7 +211,7 @@ export async function requestReauthentication(email: string): Promise<ActionResu
 export async function sendMagicLink(email: string): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         const { error } = await supabase.auth.signInWithOtp({
             email,
@@ -250,7 +251,7 @@ export async function sendMagicLink(email: string): Promise<ActionResult> {
 export async function updateUserAppMetadata(userId: string, role: 'client' | 'admin'): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         // Use admin API to update both app_metadata and user_metadata
         const { data, error } = await supabase.auth.admin.updateUserById(userId, {
@@ -292,7 +293,7 @@ export async function updateUserAppMetadata(userId: string, role: 'client' | 'ad
 export async function syncAllUsersAppMetadata(): Promise<ActionResult> {
     try {
         // CORRECTED: This is the only line changed in this function.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
 
         // Get all profiles with their roles
         const { data: profiles, error: profilesError } = await supabase

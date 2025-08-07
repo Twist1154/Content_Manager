@@ -185,6 +185,7 @@ export function ContentDashboard({ userId, isAdminView }: ContentDashboardProps)
 
     const getTypeIcon = (type: string) => {
         switch (type) {
+            // eslint-disable-next-line jsx-a11y/alt-text
             case 'image': return <Image className="w-4 h-4" />;
             case 'video': return <Video className="w-4 h-4" />;
             case 'music': return <Music className="w-4 h-4" />;

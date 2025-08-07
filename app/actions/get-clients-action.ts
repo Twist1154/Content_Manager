@@ -3,6 +3,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import {SupabaseClient} from "@supabase/supabase-js";
 // No need to import cookies here anymore, the utility handles it.
 
 // This Client interface should be kept in sync with your component's needs
@@ -33,7 +34,7 @@ export async function getAllClients(): Promise<FetchResult> {
     try {
         console.log('get-clients-action: Creating Supabase client with service role...');
         // CORRECTED: We now await the createClient call.
-        const supabase = await createClient({ useServiceRole: true });
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
         console.log('get-clients-action: Supabase client created');
 
         // IMPROVEMENT: Fetch all required data in a single, efficient query.

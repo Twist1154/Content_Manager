@@ -3,6 +3,7 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import {SupabaseClient} from "@supabase/supabase-js";
 
 // Interfaces remain the same, they are well-defined.
 export interface ClientOverview {
@@ -35,14 +36,14 @@ export interface ClientOverviewResult {
 }
 
 export async function getClientOverview(): Promise<ClientOverviewResult> {
-    console.log('client-overview-action: getClientOverview called');
+    console.log("--- [Action Triggered] getClientOverview ---");
+
     try {
-        console.log('client-overview-action: Creating Supabase client with service role...');
-        // CORRECTED: Added 'await' to correctly resolve the client Promise.
-        const supabase = await createClient({ useServiceRole: true });
+        console.log("[getClientOverview] Creating Supabase client with service role. RLS will be bypassed.");
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
         console.log('client-overview-action: Supabase client created');
 
-        // IMPROVEMENT: Run our main data-fetching operations concurrently for speed.
+        console.log("[getClientOverview] Fetching data from Supabase...");
         const [statsData, recentClientsData] = await Promise.all([
             supabase
                 .from('profiles')
@@ -59,10 +60,30 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
                 .order('created_at', { ascending: false }),
         ]);
 
-        if (statsData.error) throw statsData.error;
-        if (recentClientsData.error) throw recentClientsData.error;
+        console.log("[getClientOverview] Data received from Supabase.");
 
-        // --- Process Stats Data ---
+        // --- LOG 3: Log potential errors from Supabase ---
+        if (statsData.error) {
+            console.error("[getClientOverview] ERROR from statsData query:", statsData.error);
+            throw statsData.error; // This will be caught by the main catch block
+        }
+        if (recentClientsData.error) {
+            console.error("[getClientOverview] ERROR from recentClientsData query:", recentClientsData.error);
+            throw recentClientsData.error;
+        }
+        console.log("--- RAW DATA FROM SUPABASE (STATS) ---");
+        console.log(JSON.stringify(statsData.data, null, 2)); // Pretty-print the JSON
+        console.log("--- RAW DATA FROM SUPABASE (CLIENTS) ---");
+        console.log(JSON.stringify(recentClientsData.data, null, 2)); // Pretty-print the JSON
+
+        console.log(`[getClientOverview] Received ${statsData.data?.length ?? 0} profiles for stats processing.`);
+        console.log(`[getClientOverview] Received ${recentClientsData.data?.length ?? 0} profiles for client list.`);
+
+        if (statsData.data?.length === 0) {
+            console.warn("[getClientOverview] WARNING: The query returned 0 client profiles. This could be because no clients exist or an unexpected issue.");
+        }
+
+        // --- Start processing the data... ---
         const allProfilesWithContent = statsData.data || [];
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
@@ -114,15 +135,18 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
                 ).length;
 
                 return {
-                    ...profile,
-                stores: profile.stores,
+                ...(profile as Omit<typeof profile, 'stores'>), // Cast to ensure type compatibility
+                stores: profile.stores || [],
                 content_count: profileContent.length,
-                // Now this value is either `string` or `undefined`, matching the type
                 latest_upload: latestUploadDate,
                     active_campaigns: activeCampaigns,
                 };
             });
 
+        console.log(`[getClientOverview] Processing complete. Returning ${clients.length} clients and final stats.`);
+        console.log("[getClientOverview] Final Stats:", stats);
+
+        console.log("--- [Action Succeeded] getClientOverview ---");
         return {
             success: true,
             clients,
@@ -130,7 +154,10 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
         };
 
     } catch (error: any) {
-        console.error('client-overview-action: Error fetching client overview:', error);
+        console.error("--- [Action Failed] An error occurred in getClientOverview ---");
+        console.error("Error Message:", error.message);
+        console.error("Full Error Object:", error);
+
         return {
             success: false,
             clients: [],
