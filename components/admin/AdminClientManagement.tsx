@@ -751,7 +751,7 @@ export function AdminClientManagement() {
                         <CardContent className="space-y-4">
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                                 <p className="text-blue-800 text-sm">
-                                    <strong>What this does:</strong> This will update all users' app_metadata.role
+                                    <strong>What this does:</strong> This will update all user&apos;s app_metadata.role
                                     to match their role in the profiles table. This ensures that Row Level Security
                                     policies work correctly and users have the proper permissions.
                                 </p>

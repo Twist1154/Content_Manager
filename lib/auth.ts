@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
-import { registerUser } from '@/app/actions/auth-actions';
+import { registerUser, signInUser } from '@/app/actions/auth-actions';
+import { SupabaseClient } from '@supabase/supabase-js'; // <-- 1. IMPORT THE TYPE
 
 export async function signUp(email: string, password: string, role: 'client' | 'admin' = 'client') {
   // Use the server action to register the user with proper role handling
@@ -9,8 +10,8 @@ export async function signUp(email: string, password: string, role: 'client' | '
     throw new Error(result.error || result.message);
   }
 
-  // Get the user data to return in the same format as the original function
-  const supabase = await createClient();
+  //                                                vvvvvvvvvvvvvvvvvvv
+  const supabase = await createClient() as SupabaseClient; // <-- 2. ADD TYPE ASSERTION
   const { data, error } = await supabase.auth.getUser();
 
   if (error) throw error;
@@ -19,32 +20,43 @@ export async function signUp(email: string, password: string, role: 'client' | '
 }
 
 export async function signIn(email: string, password: string) {
-  const supabase = await createClient();
+  const result = await signInUser(email, password);
   
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  if (!result.success) {
+    throw new Error(result.error || 'Sign in failed');
+  }
 
-  if (error) throw error;
-  return data;
+  return { user: result.user };
 }
 
 export async function signOut() {
-  const supabase = await createClient();
+  //                                                vvvvvvvvvvvvvvvvvvv
+  const supabase = await createClient() as SupabaseClient; // <-- 2. ADD TYPE ASSERTION
   
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
 
 export async function getCurrentUser() {
-  const supabase = await createClient();
+  //                                                vvvvvvvvvvvvvvvvvvv
+  const supabase = await createClient() as SupabaseClient; // <-- 2. ADD TYPE ASSERTION
   
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) return null;
 
-  const { data: profile, error } = await supabase
+  const isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+
+  // 3. EXPLICITLY DEFINE THE CLIENT TO RESOLVE THE TERNARY AMBIGUITY
+  let supabaseClient: SupabaseClient;
+  if (isAdmin) {
+    supabaseClient = await createClient({ useServiceRole: true }) as SupabaseClient;
+  } else {
+    supabaseClient = supabase;
+  }
+
+  // NOW THIS WILL WORK
+  const { data: profile, error } = await supabaseClient
     .from('profiles')
     .select('*')
     .eq('id', user.id)
@@ -53,13 +65,13 @@ export async function getCurrentUser() {
   if (error) {
     console.error('Error fetching profile:', error);
     
-    // If profile doesn't exist, create it with proper error handling
-    const { data: newProfile, error: insertError } = await supabase
+    // AND THIS WILL WORK
+    const { data: newProfile, error: insertError } = await supabaseClient
       .from('profiles')
       .insert({
         id: user.id,
         email: user.email!,
-        role: 'client'
+        role: isAdmin ? 'admin' : 'client'
       })
       .select()
       .single();
@@ -72,7 +84,7 @@ export async function getCurrentUser() {
         profile: { 
           id: user.id, 
           email: user.email!, 
-          role: 'client' as const,
+          role: isAdmin ? ('admin' as const) : ('client' as const),
           created_at: new Date().toISOString()
         } 
       };
