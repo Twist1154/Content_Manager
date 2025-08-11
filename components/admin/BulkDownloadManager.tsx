@@ -9,7 +9,6 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { Badge } from '@/components/ui/Badge';
 import {
     Download,
-    Calendar,
     Filter,
     FileText,
     Image,
@@ -63,6 +62,9 @@ export function BulkDownloadManager() {
 
     const fetchContent = useCallback(async () => {
         try {
+        // Wait for the session to be available
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
             const { data, error } = await supabase
                 .from('content')
                 .select(`
@@ -74,6 +76,7 @@ export function BulkDownloadManager() {
 
             if (error) throw error;
             setContent(data || []);
+        }
         } catch (error) {
             console.error('Error fetching content:', error);
         } finally {
