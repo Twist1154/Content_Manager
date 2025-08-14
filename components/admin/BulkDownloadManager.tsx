@@ -1,22 +1,15 @@
+// components/admin/BulkDownloadManager.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { Badge } from '@/components/ui/Badge';
-import {
-    Download,
-    Filter,
-    FileText,
-    Image,
-    Video,
-    Music,
-    Archive
-} from 'lucide-react';
+import {Download, Filter, FileText, Image, Video, Music, Archive} from 'lucide-react';
 import { format } from 'date-fns';
+import {fetchAllContent} from '@/app/actions/data-actions';
 
 interface ContentItem {
     id: string;
@@ -57,32 +50,21 @@ export function BulkDownloadManager() {
         company: '',
     });
 
-    // Memoize the supabase client to prevent it from being recreated on every render
-    const supabase = useMemo(() => createClient(), []);
-
     const fetchContent = useCallback(async () => {
         try {
-        // Wait for the session to be available
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            const { data, error } = await supabase
-                .from('content')
-                .select(`
-          *,
-          stores (name, brand_company, address),
-          profiles (email)
-        `)
-                .order('created_at', { ascending: false });
+            const result = await fetchAllContent();
 
-            if (error) throw error;
-            setContent(data || []);
-        }
+            if (result.success) {
+                setContent(result.content || []);
+            } else {
+                throw new Error(result.error);
+            }
         } catch (error) {
             console.error('Error fetching content:', error);
         } finally {
             setLoading(false);
         }
-    }, [supabase]);
+    }, []);
 
     const applyFilters = useCallback(() => {
         let filtered = [...content];
