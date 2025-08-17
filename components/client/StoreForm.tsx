@@ -1,11 +1,13 @@
+// components/client/StoreForm.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { addStore } from '@/app/actions/data-actions';
+import type { StoreData } from '@/app/actions/data-actions';
 
 interface StoreFormProps {
   userId: string;
@@ -24,8 +26,6 @@ export function StoreForm({ userId, onSuccess }: StoreFormProps) {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Memoize the supabase client to prevent it from being recreated on every render
-  const supabase = useMemo(() => createClient(), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,16 +33,19 @@ export function StoreForm({ userId, onSuccess }: StoreFormProps) {
     setError('');
 
     try {
-      const { error } = await supabase.from('stores').insert({
-        user_id: userId,
+      const storeData: StoreData = {
         name: formData.name,
         brand_company: formData.brand_company,
         address: formData.address,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
         longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-      });
+      };
 
-      if (error) throw error;
+      const result = await addStore(storeData, userId);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
       if (onSuccess) {
         onSuccess();
@@ -50,7 +53,7 @@ export function StoreForm({ userId, onSuccess }: StoreFormProps) {
         router.refresh();
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to save store details');
     } finally {
       setLoading(false);
     }

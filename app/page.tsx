@@ -24,7 +24,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Image
-                src="/Hapo Media - Primary.svg"
+                src="/Hapo Logo.svg"
                 alt="Hapo Media"
                 width={48}
                 height={48}
@@ -329,7 +329,7 @@ export default function Home() {
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-4">
                 <Image
-                  src="/Hapo Media - Secondary.svg"
+                  src="/Hapo Logo.svg"
                   alt="Hapo Media"
                   width={40}
                   height={40}
