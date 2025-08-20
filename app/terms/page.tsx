@@ -3,10 +3,32 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { FileText, Users, Shield, AlertTriangle, Mail } from 'lucide-react';
 
+const PolicySection = ({ icon: Icon, title, children, iconColorClass = 'text-primary' }) => (
+    <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+                <Icon className={`w-5 h-5 ${iconColorClass}`} />
+                {title}
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground prose-p:my-2 prose-ul:my-2 prose-strong:text-foreground">
+            {children}
+        </CardContent>
+    </Card>
+);
+
+const InfoBox = ({ children, variant = 'default' }) => {
+    const variants = {
+        default: 'bg-primary/10 border-primary/20 text-primary',
+        destructive: 'bg-destructive/10 border-destructive/20 text-destructive',
+    };
+    return <div className={`rounded-lg border p-4 not-prose ${variants[variant]}`}>{children}</div>;
+};
+
 export default function TermsOfServicePage() {
     return (
-        <div className="min-h-screen bg-gray-50 py-8 px-4">
-            <div className="container mx-auto max-w-4xl">
+        <div className="min-h-screen bg-background">
+            <div className="container mx-auto max-w-4xl py-8 px-4">
                 <div className="mb-6">
                     <BackButton href="/" label="Back to home" />
                     <Breadcrumb
@@ -18,68 +40,51 @@ export default function TermsOfServicePage() {
                 </div>
 
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-                    <p className="text-gray-600">Hapo Media Content Hub</p>
-                    <p className="text-sm text-gray-500 mt-2">Last Updated: 16 July 2025</p>
+                    <h1 className="text-4xl font-bold text-foreground mb-2">Terms of Service</h1>
+                    <p className="text-muted-foreground">Hapo Media Content Hub</p>
+                    <p className="text-sm text-muted-foreground mt-2">Last Updated: 16 July 2025</p>
                 </div>
 
                 <div className="space-y-6">
-                    {/* Introduction */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-blue-600" />
-                                Agreement to Terms
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-gray-700 mb-4">
+                    <PolicySection
+                        icon={FileText}
+                        title="Agreement to Terms"
+                    >
+                        <p>
                                 Welcome to the Hapo Media Content Hub. These Terms of Service (&quot;Terms&quot;) govern your use of our
                                 content management platform and services. By accessing or using our service, you agree to be bound
                                 by these Terms.
                             </p>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <p className="text-blue-800">
-                                    <strong>Important:</strong> If you do not agree to these Terms, please do not use our service.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Service Description */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Users className="w-5 h-5 text-green-600" />
-                                Service Description
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-gray-700 mb-4">
-                                The Hapo Media Content Hub is a digital content management platform that allows:
+                        <InfoBox>
+                            <p className="text-primary">
+                                <strong>Important:</strong> If you do not agree to these Terms, please do not use our service.
                             </p>
-                            <ul className="list-disc list-inside text-gray-700 space-y-2 mb-4">
+                        </InfoBox>
+                    </PolicySection>
+
+                    <PolicySection
+                        icon={Users}
+                        title="Service Description"
+                        iconColorClass="text-green-500">
+                        <p>The Hapo Media Content Hub is a digital content management platform that allows:</p>
+                        <ul>
                                 <li><strong>Clients</strong> to upload, organize, and schedule digital marketing content</li>
                                 <li><strong>Administrators</strong> to manage, organize, and deploy client content across multiple locations</li>
                                 <li>Secure storage and management of images, videos, and audio files</li>
                                 <li>Campaign scheduling and content organization tools</li>
                             </ul>
-                        </CardContent>
-                    </Card>
+                    </PolicySection>
 
                     {/* User Accounts and Responsibilities */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-purple-600" />
-                                User Accounts and Responsibilities
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                    <PolicySection
+                        icon={Shield}
+                        title="User Accounts and Responsibilities"
+                        iconColorClass="text-purple-500"
+                    >
                             <div className="space-y-4">
                                 <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Account Creation</h4>
-                                    <ul className="list-disc list-inside text-gray-700 space-y-1">
+                                <h4 className="font-semibold text-foreground">Account Creation</h4>
+                                <ul>
                                         <li>You must provide accurate and complete information when creating an account</li>
                                         <li>You are responsible for maintaining the security of your account credentials</li>
                                         <li>You must notify us immediately of any unauthorized use of your account</li>
@@ -87,9 +92,9 @@ export default function TermsOfServicePage() {
                                 </div>
 
                                 <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Acceptable Use</h4>
-                                    <p className="text-gray-700 mb-2">You agree to use our service only for lawful purposes and in accordance with these Terms. You must not:</p>
-                                    <ul className="list-disc list-inside text-gray-700 space-y-1">
+                                <h4 className="font-semibold text-foreground">Acceptable Use</h4>
+                                <p>You agree to use our service only for lawful purposes and in accordance with these Terms. You must not:</p>
+                                <ul>
                                         <li>Upload content that infringes on intellectual property rights</li>
                                         <li>Share inappropriate, offensive, or illegal content</li>
                                         <li>Attempt to gain unauthorized access to our systems</li>
@@ -98,198 +103,136 @@ export default function TermsOfServicePage() {
                                     </ul>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                    </PolicySection>
 
                     {/* Content and Intellectual Property */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-orange-600" />
-                                Content and Intellectual Property
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Your Content</h4>
-                                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                        <li>You retain ownership of all content you upload to our platform</li>
-                                        <li>You grant us a limited license to store, process, and display your content as necessary to provide our services</li>
-                                        <li>You are responsible for ensuring you have the right to upload and use all content</li>
-                                        <li>You warrant that your content does not infringe on third-party rights</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Our Platform</h4>
-                                    <p className="text-gray-700">
-                                        The Hapo Media Content Hub platform, including its design, functionality, and underlying technology,
-                                        is owned by Hapo Media and protected by intellectual property laws.
-                                    </p>
-                                </div>
+                    <PolicySection icon={FileText} title="Content and Intellectual Property" iconColorClass="text-orange-500">
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-semibold text-foreground">Your Content</h4>
+                                <ul>
+                                    <li>You retain ownership of all content you upload to our platform</li>
+                                    <li>You grant us a limited license to store, process, and display your content as necessary to provide our services</li>
+                                    <li>You are responsible for ensuring you have the right to upload and use all content</li>
+                                    <li>You warrant that your content does not infringe on third-party rights</li>
+                                </ul>
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Our Platform</h4>
+                                <p>
+                                    The Hapo Media Content Hub platform, including its design, functionality, and underlying technology,
+                                    is owned by Hapo Media and protected by intellectual property laws.
+                                </p>
+                            </div>
+                        </div>
+                    </PolicySection>
 
                     {/* Service Availability and Modifications */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                                Service Availability and Modifications
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Service Availability</h4>
-                                    <p className="text-gray-700">
-                                        While we strive to provide continuous service availability, we do not guarantee uninterrupted access.
-                                        We may temporarily suspend service for maintenance, updates, or other operational reasons.
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Service Modifications</h4>
-                                    <p className="text-gray-700">
-                                        We reserve the right to modify, update, or discontinue features of our service at any time.
-                                        We will provide reasonable notice of significant changes that may affect your use of the service.
-                                    </p>
-                                </div>
+                    <PolicySection icon={AlertTriangle} title="Service Availability and Modifications" iconColorClass="text-yellow-500">
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-semibold text-foreground">Service Availability</h4>
+                                <p>
+                                    While we strive to provide continuous service availability, we do not guarantee uninterrupted access.
+                                    We may temporarily suspend service for maintenance, updates, or other operational reasons.
+                                </p>
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Service Modifications</h4>
+                                <p>
+                                    We reserve the right to modify, update, or discontinue features of our service at any time.
+                                    We will provide reasonable notice of significant changes that may affect your use of the service.
+                                </p>
+                            </div>
+                        </div>
+                    </PolicySection>
 
                     {/* Limitation of Liability */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Shield className="w-5 h-5 text-red-600" />
-                                Limitation of Liability
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                                <h4 className="font-semibold text-red-800 mb-2">Important Legal Notice</h4>
-                                <p className="text-red-700 text-sm">
+                    <PolicySection icon={AlertTriangle} title="Limitation of Liability" iconColorClass="text-red-500">
+                        <InfoBox variant="destructive">
+                            <h4 className="font-semibold text-destructive mb-2">Important Legal Notice</h4>
+                            <p className="text-destructive/90 text-sm">
                                     The following limitations apply to the maximum extent permitted by law.
                                 </p>
-                            </div>
-
-                            <div className="space-y-4">
-                                <p className="text-gray-700">
-                                    <strong>Service &quot;As Is&quot;:</strong> Our service is provided &quot;as is&quot; without warranties of any kind,
-                                    either express or implied.
-                                </p>
-
-                                <p className="text-gray-700">
-                                    <strong>Limitation of Damages:</strong> In no event shall Hapo Media be liable for any indirect,
+                        </InfoBox>
+                        <div className="space-y-4 mt-4">
+                            <p><strong>Service &quot;As Is&quot;:</strong> Our service is provided &quot;as is&quot; without warranties of any kind,
+                                either express or implied.</p>
+                            <p><strong>Limitation of Damages:</strong> In no event shall Hapo Media be liable for any indirect,
                                     incidental, special, consequential, or punitive damages, including but not limited to loss of profits,
-                                    data, or business opportunities.
-                                </p>
-
-                                <p className="text-gray-700">
-                                    <strong>Maximum Liability:</strong> Our total liability for any claims related to the service
-                                    shall not exceed the amount paid by you for the service in the 12 months preceding the claim.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                                data, or business opportunities.</p>
+                            <p><strong>Maximum Liability:</strong> Our total liability for any claims related to the service
+                                shall not exceed the amount paid by you for the service in the 12 months preceding the claim.</p>
+                                </div>
+                    </PolicySection>
 
                     {/* Termination */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <AlertTriangle className="w-5 h-5 text-gray-600" />
-                                Termination
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Termination by You</h4>
-                                    <p className="text-gray-700">
-                                        You may terminate your account at any time by contacting us or using the account deletion
-                                        features in your dashboard.
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Termination by Us</h4>
-                                    <p className="text-gray-700 mb-2">
-                                        We may terminate or suspend your account if you:
-                                    </p>
-                                    <ul className="list-disc list-inside text-gray-700 space-y-1">
-                                        <li>Violate these Terms of Service</li>
-                                        <li>Engage in fraudulent or illegal activities</li>
-                                        <li>Pose a security risk to our platform or other users</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <h4 className="font-semibold text-gray-900 mb-2">Effect of Termination</h4>
-                                    <p className="text-gray-700">
-                                        Upon termination, your access to the service will cease, and we may delete your account
-                                        and associated data in accordance with our Privacy Policy.
-                                    </p>
-                                </div>
+                    <PolicySection icon={AlertTriangle} title="Termination" iconColorClass="text-gray-500">
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="font-semibold text-foreground">Termination by You</h4>
+                                <p>
+                                    You may terminate your account at any time by contacting us or using the account deletion
+                                    features in your dashboard.
+                                </p>
                             </div>
-                        </CardContent>
-                    </Card>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Termination by Us</h4>
+                                <p>We may terminate or suspend your account if you:</p>
+                                <ul>
+                                    <li>Violate these Terms of Service</li>
+                                    <li>Engage in fraudulent or illegal activities</li>
+                                    <li>Pose a security risk to our platform or other users</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">Effect of Termination</h4>
+                                <p>
+                                    Upon termination, your access to the service will cease, and we may delete your account
+                                    and associated data in accordance with our Privacy Policy.
+                                </p>
+                            </div>
+                        </div>
+                    </PolicySection>
 
                     {/* Changes to Terms */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-indigo-600" />
-                                Changes to These Terms
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-gray-700 mb-4">
-                                We may update these Terms from time to time to reflect changes in our service, legal requirements,
-                                or business practices. We will notify you of material changes by:
-                            </p>
-                            <ul className="list-disc list-inside text-gray-700 space-y-1 mb-4">
-                                <li>Posting the updated Terms on our platform</li>
-                                <li>Updating the &quot;Last Updated&quot; date</li>
-                                <li>Sending email notifications for significant changes</li>
-                            </ul>
-                            <p className="text-gray-700">
-                                Your continued use of the service after changes become effective constitutes acceptance of the new Terms.
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <PolicySection icon={FileText} title="Changes to These Terms" iconColorClass="text-indigo-500">
+                        <p>
+                            We may update these Terms from time to time to reflect changes in our service, legal requirements,
+                            or business practices. We will notify you of material changes by:
+                        </p>
+                        <ul>
+                            <li>Posting the updated Terms on our platform</li>
+                            <li>Updating the &quot;Last Updated&quot; date</li>
+                            <li>Sending email notifications for significant changes</li>
+                        </ul>
+                        <p>
+                            Your continued use of the service after changes become effective constitutes acceptance of the new Terms.
+                        </p>
+                    </PolicySection>
 
                     {/* Contact Information */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Mail className="w-5 h-5 text-blue-600" />
-                                Contact Information
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                                <h4 className="font-semibold text-blue-900 mb-4">Questions About These Terms?</h4>
-                                <p className="text-blue-800 mb-2">
+                    <PolicySection icon={Mail} title="Contact Information">
+                        <InfoBox>
+                            <h4 className="font-semibold text-primary mb-2">Questions About These Terms?</h4>
+                            <p className="text-primary/90 mb-2">
                                     If you have any questions about these Terms of Service, please contact us:
                                 </p>
-                                <div className="space-y-2 text-blue-700">
+                            <div className="space-y-1 text-primary/80">
                                     <p><strong>Email:</strong> <a href="mailto:support@hapogroup.co.za" className="underline">support@hapogroup.co.za</a></p>
                                     <p><strong>Subject Line:</strong> Terms of Service Inquiry - Hapo Media Content Hub</p>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        </InfoBox>
+                    </PolicySection>
                 </div>
 
                 {/* Footer */}
-                <div className="text-center mt-12 pt-8 border-t border-gray-200">
-                    <p className="text-gray-500 text-sm">
+                <div className="text-center mt-12 pt-8 border-t border-border">
+                    <p className="text-muted-foreground text-sm">
                         © 2024 Hapo Media. All rights reserved. |
-                        <span className="ml-2">Last Updated: {new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <span className="ml-2">
+                            Last Updated: {new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
                     </p>
                 </div>
             </div>
