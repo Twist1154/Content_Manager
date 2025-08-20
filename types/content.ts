@@ -6,6 +6,28 @@
 export type ContentType = 'image' | 'video' | 'music';
 
 /**
+ * Statistics about content counts used across dashboards.
+ * Keep this in sync with app/actions/data-actions.ts
+ */
+export interface ContentStats {
+    total: number;
+    active: number;
+    scheduled: number;
+    thisMonth: number;
+}
+
+/**
+ * Minimal Store shape used by client components.
+ * Additional fields may exist in the database, but these are the ones referenced in UI code.
+ */
+export interface Store {
+    id: string;
+    name: string;
+    brand_company: string;
+    address: string;
+}
+
+/**
  * Represents a single piece of content within the system.
  * This interface is the single source of truth for content-related data,
  * combining all necessary fields from various components like ContentViewer and BulkDownloadManager.
