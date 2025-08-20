@@ -18,8 +18,11 @@ export function LoadingSpinner({ size = 'md', className, text }: LoadingSpinnerP
 
     return (
         <div className={cn('flex items-center justify-center', className)}>
-            <Loader2 className={cn('animate-spin text-blue-600', sizeClasses[size])} />
-            {text && <span className="ml-2 text-gray-600">{text}</span>}
+            {/* THEME: Replaced hardcoded 'text-blue-600' with 'text-primary' to use the theme's main color. */}
+            <Loader2 className={cn('animate-spin text-primary', sizeClasses[size])} />
+
+            {/* THEME: Replaced hardcoded 'text-gray-600' with 'text-muted-foreground' for theme-aware secondary text. */}
+            {text && <span className="ml-2 text-muted-foreground">{text}</span>}
         </div>
     );
 }

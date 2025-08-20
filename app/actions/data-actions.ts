@@ -10,8 +10,6 @@ export interface StoreData {
     name: string;
     brand_company: string;
     address: string;
-    latitude: number | null;
-    longitude: number | null;
 }
 
 export interface ContentData {
@@ -67,8 +65,6 @@ export async function addStore(storeData: StoreData, userId: string): Promise<{ 
             name: storeData.name,
             brand_company: storeData.brand_company,
             address: storeData.address,
-            latitude: storeData.latitude,
-            longitude: storeData.longitude,
         });
 
         if (error) {
@@ -374,5 +370,44 @@ export async function fetchAdminContentStats(): Promise<{
     } catch (error: any) {
         console.error('Unexpected error fetching admin content stats:', error);
         return {success: false, error: error.message};
+    }
+}
+
+
+export async function deleteContent(contentId: string, fileUrl: string): Promise<{ success: boolean; error?: string }> {
+    console.log(`[Action] Deleting content ID: ${contentId}`);
+    try {
+        const supabase = await createClient({ useServiceRole: true }) as SupabaseClient;
+
+        const filePath = `content/${fileUrl.split('/content/')[1]}`;
+        console.log(`[Action] Attempting to delete file from storage at path: ${filePath}`);
+
+        const { error: storageError } = await supabase.storage.from('content').remove([filePath]);
+
+        if (storageError) {
+            // Log the error but don't stop; the database record might still be deletable.
+            console.error(`Storage deletion failed for ${filePath}, but proceeding with DB deletion. Error:`, storageError.message);
+        } else {
+            console.log(`[Action] Successfully deleted file from storage.`);
+        }
+
+        // 2. Delete the record from the 'content' table in the database
+        console.log(`[Action] Deleting record from 'content' table where id = ${contentId}`);
+        const { error: dbError } = await supabase
+            .from('content')
+            .delete()
+            .eq('id', contentId);
+
+        if (dbError) {
+            console.error(`[Action] Database deletion failed for content ID ${contentId}:`, dbError.message);
+            throw dbError;
+        }
+
+        console.log(`[Action] Successfully deleted record from database.`);
+        return { success: true };
+
+    } catch (error: any) {
+        console.error(`[Action] An unexpected error occurred in deleteContent:`, error.message);
+        return { success: false, error: error.message };
     }
 }

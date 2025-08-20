@@ -2,99 +2,158 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ ============================================================================
+ SECTION 1: THEME COLOR & STYLE VARIABLES
+ ============================================================================
+ - All colors are defined here using HSL values for Tailwind.
+ - `:root` contains the variables for the default (light) theme.
+ - `.dark` overrides these variables for the dark theme.
+*/
+
+:root {
+    /* --- Light Theme Colors --- */
+    --background: 0 0% 100%;                  /* #ffffff / white */
+    --foreground: 222.2 84% 4.9%;            /* #0c2b5e / dark navy */
+
+    --card: 0 0% 100%;                         /* #ffffff / white */
+    --card-foreground: 222.2 84% 4.9%;        /* #0c2b5e / dark navy */
+
+    --popover: 0 0% 100%;                      /* #ffffff / white */
+    --popover-foreground: 222.2 84% 4.9%;     /* #0c2b5e / dark navy */
+
+    --primary: 221.2 83.2% 53.3%;             /* #3b82f6 / blue */
+    --primary-foreground: 210 40% 98%;        /* #f8fafc / almost white */
+
+    --secondary: 210 40% 96.1%;               /* #f1f5f9 / light gray */
+    --secondary-foreground: 222.2 47.4% 11.2%; /* #111827 / very dark blue */
+
+    --muted: 210 40% 96.1%;                   /* #f1f5f9 / light gray */
+    --muted-foreground: 215.4 16.3% 46.9%;   /* #64748b / gray-blue */
+
+    --accent: 210 40% 96.1%;                  /* #f1f5f9 / light gray */
+    --accent-foreground: 222.2 47.4% 11.2%;  /* #111827 / very dark blue */
+
+    --destructive: 0 84.2% 60.2%;             /* #ef4444 / red */
+    --destructive-foreground: 210 40% 98%;    /* #f8fafc / almost white */
+
+    --border: 214.3 31.8% 91.4%;              /* #e2e8f0 / gray */
+    --input: 214.3 31.8% 91.4%;               /* #e2e8f0 / gray */
+    --ring: 222.2 84% 4.9%;                   /* #0c2b5e / dark navy */
+
+    /* --- Global Style Variables --- */
+    --radius: 0.75rem;
+
+    /* --- Variables for Custom Utilities (e.g., scrollbar) --- */
+    --scrollbar-track: 220 13% 91%;          /* #e5e7eb */
+    --scrollbar-thumb: 220 9% 61%;           /* #9ca3af */
+    --scrollbar-thumb-hover: 220 9% 41%;      /* #6b7280 */
+    --shadow-color: 0 0 0;                    /* black */
+}
+
+.dark {
+    /* --- Dark Theme Colors --- */
+    --background: 222.2 84% 4.9%;             /* #0c2b5e / dark navy */
+    --foreground: 210 40% 98%;                 /* #f8fafc / almost white */
+
+    --card: 222.2 84% 4.9%;                    /* #0c2b5e / dark navy */
+    --card-foreground: 210 40% 98%;            /* #f8fafc / almost white */
+
+    --popover: 222.2 84% 4.9%;                 /* #0c2b5e / dark navy */
+    --popover-foreground: 210 40% 98%;         /* #f8fafc / almost white */
+
+    --primary: 217.2 91.2% 59.8%;              /* #3f6cff / lighter blue */
+    --primary-foreground: 222.2 47.4% 11.2%;  /* #111827 / very dark blue */
+
+    --secondary: 217.2 32.6% 17.5%;            /* #2c3b57 / dark gray-blue */
+    --secondary-foreground: 210 40% 98%;       /* #f8fafc / almost white */
+
+    --muted: 217.2 32.6% 17.5%;                /* #2c3b57 / dark gray-blue */
+    --muted-foreground: 215 20.2% 65.1%;      /* #a3b3c1 / light gray-blue */
+
+    --accent: 217.2 32.6% 17.5%;               /* #2c3b57 / dark gray-blue */
+    --accent-foreground: 210 40% 98%;          /* #f8fafc / almost white */
+
+    --destructive: 0 62.8% 30.6%;              /* #992a2a / dark red */
+    --destructive-foreground: 210 40% 98%;     /* #f8fafc / almost white */
+
+    --border: 217.2 32.6% 17.5%;               /* #2c3b57 / dark gray-blue */
+    --input: 217.2 32.6% 17.5%;                /* #2c3b57 / dark gray-blue */
+    --ring: 212.7 26.8% 83.9%;                 /* #d6d6d6 / light gray */
+
+    /* --- Dark Theme Variables for Custom Utilities --- */
+    --scrollbar-track: 224 71% 4%;              /* #020617 / very dark */
+    --scrollbar-thumb: 215 28% 17%;            /* #27272a / dark gray */
+    --scrollbar-thumb-hover: 215 25% 27%;      /* #404040 / gray */
+    --shadow-color: 255 255 255;               /* #ffffff / white */
+}
+
+/*
+ ============================================================================
+ SECTION 2: CUSTOM UTILITY CLASSES AND GLOBAL STYLES
+ ============================================================================
+ - These styles use the variables defined above to be theme-aware.
+*/
+
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
+    background: hsl(var(--scrollbar-track));
+    border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+    background: hsl(var(--scrollbar-thumb));
+    border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Line clamp utilities */
-.line-clamp-1 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
-.line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.line-clamp-3 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-/* Animation utilities */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Focus styles for better accessibility */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    background: hsl(var(--scrollbar-thumb-hover));
 }
 
 /* Custom button hover effects */
 .btn-hover-lift {
-  transition: all 0.2s ease;
+    transition: all 0.2s ease;
 }
-
 .btn-hover-lift:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px hsla(var(--shadow-color), 0.15);
 }
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+/* Focus styles for better accessibility */
+.focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring focus:ring-offset-background;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
+/*
+ ============================================================================
+ SECTION 3: NON-THEMED UTILITIES
+ ============================================================================
+ - These utilities do not need to change between themes.
+*/
 
-  body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+/* Line clamp utilities */
+.line-clamp-1, .line-clamp-2, .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+.line-clamp-1 { -webkit-line-clamp: 1; }
+.line-clamp-2 { -webkit-line-clamp: 2; }
+.line-clamp-3 { -webkit-line-clamp: 3; }
+
+/* Animation utilities */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
 }

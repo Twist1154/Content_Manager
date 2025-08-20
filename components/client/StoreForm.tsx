@@ -37,8 +37,6 @@ export function StoreForm({ userId, onSuccess }: StoreFormProps) {
         name: formData.name,
         brand_company: formData.brand_company,
         address: formData.address,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
       };
 
       const result = await addStore(storeData, userId);
