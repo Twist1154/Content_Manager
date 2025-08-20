@@ -1,6 +1,6 @@
 # Digital Marketing Content Hub
 
-[![Next.js](https://img.shields.io/badge/Next.js-13.5.1-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3.5-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2.2-blue)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-2.50.4-green)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.3-38B2AC)](https://tailwindcss.com/)

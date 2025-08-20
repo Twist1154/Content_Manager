@@ -4,8 +4,9 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'ukmmiaupsbmzgseheyky.supabase.co',
-        pathname: '/**',
+        hostname: 'ukmmiaupsbmzgseheyky.supabase.co', // Your Supabase project hostname
+        port: '',
+        pathname: '/storage/v1/object/public/**', // Allow all images from public storage buckets
       },
     ],
   },

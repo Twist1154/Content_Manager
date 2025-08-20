@@ -1,25 +1,21 @@
 // components/admin/BulkDownloadManager.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Tooltip } from '@/components/ui/Tooltip';
-import { Badge } from '@/components/ui/Badge';
-import {Download, Filter, FileText, Image, Video, Music, Archive} from 'lucide-react';
-import { format } from 'date-fns';
-import { fetchAllContent } from '@/app/actions/data-actions';
-
-// --- Import the new reusable component ---
-import { ContentCard } from '@/components/content/ContentCard';
-// Assume a shared types file exists now
-import { ContentItem } from '@/types/content';
+import {useCallback, useEffect, useState} from 'react';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/Card';
+import {Button} from '@/components/ui/Button';
+import {Input} from '@/components/ui/Input';
+import {Tooltip} from '@/components/ui/Tooltip';
+import {Badge} from '@/components/ui/Badge';
+import {LoadingSpinner} from '@/components/ui/LoadingSpinner'; // Import LoadingSpinner
+import {Archive, Download, Filter} from 'lucide-react';
+import {format} from 'date-fns';
+import {fetchAllContent} from '@/app/actions/data-actions';
+import {ContentCard} from '@/components/content/ContentCard';
+import {ContentItem} from '@/types/content';
 import {ContentDetailModal} from "@/components/content/ContentDetailModal";
 import {formatFileSize} from "@/utils/contentUtils";
-
-// Assume formatFileSize is now in a shared utils file
-// import { formatFileSize } from '@/utils/formatters';
+import {cn} from '@/lib/utils'; // Import cn
 
 
 interface FilterOptions {
@@ -90,13 +86,13 @@ export function BulkDownloadManager() {
 
         if (filters.client) {
             filtered = filtered.filter(item =>
-        item.profiles?.email?.toLowerCase().includes(filters.client.toLowerCase())
+                item.profiles?.email?.toLowerCase().includes(filters.client.toLowerCase())
             );
         }
 
         if (filters.company) {
             filtered = filtered.filter(item =>
-        item.stores?.brand_company?.toLowerCase().includes(filters.company.toLowerCase())
+                item.stores?.brand_company?.toLowerCase().includes(filters.company.toLowerCase())
             );
         }
 
@@ -138,14 +134,22 @@ export function BulkDownloadManager() {
 
             // Create CSV data
             const csvData = [
-                ['Title', 'Type', 'Client Email', 'Store', 'Company', 'Address', 'File URL', 'File Size (MB)', 'Upload Date'],
+                ['Title',
+                    'Type',
+                    'Client Email',
+                    'Store',
+                    'Company',
+                    'Address',
+                    'File URL',
+                    'File Size (MB)',
+                    'Upload Date'],
                 ...selectedContent.map(item => [
                     item.title,
                     item.type,
-          item.profiles?.email || 'Unknown',
-          item.stores?.name || 'Unknown',
-          item.stores?.brand_company || 'Unknown',
-          item.stores?.address || 'Unknown',
+                    item.profiles?.email || 'Unknown',
+                    item.stores?.name || 'Unknown',
+                    item.stores?.brand_company || 'Unknown',
+                    item.stores?.address || 'Unknown',
                     item.file_url,
                     (item.file_size / (1024 * 1024)).toFixed(2),
                     format(new Date(item.created_at), 'yyyy-MM-dd HH:mm:ss')
@@ -158,7 +162,7 @@ export function BulkDownloadManager() {
             ).join('\n');
 
             // Download CSV
-            const blob = new Blob([csvString], { type: 'text/csv' });
+            const blob = new Blob([csvString], {type: 'text/csv'});
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -173,7 +177,7 @@ export function BulkDownloadManager() {
                 `${item.title} (${item.type}): ${item.file_url}`
             ).join('\n');
 
-            const linksBlob = new Blob([linksText], { type: 'text/plain' });
+            const linksBlob = new Blob([linksText], {type: 'text/plain'});
             const linksUrl = window.URL.createObjectURL(linksBlob);
             const linksA = document.createElement('a');
             linksA.href = linksUrl;
@@ -191,7 +195,6 @@ export function BulkDownloadManager() {
     };
 
 
-
     const getTotalSize = () => {
         const selectedContent = filteredContent.filter(item => selectedItems.has(item.id));
         const totalBytes = selectedContent.reduce((sum, item) => sum + item.file_size, 0);
@@ -199,7 +202,11 @@ export function BulkDownloadManager() {
     };
 
     if (loading) {
-        return <div className="flex justify-center p-8">Loading content...</div>;
+        return (
+            <div className="flex justify-center p-8">
+                <LoadingSpinner size="lg" text="Loading all content..."/>
+            </div>
+        );
     }
 
     return (
@@ -208,34 +215,37 @@ export function BulkDownloadManager() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Filter className="w-5 h-5" />
+                        <Filter className="w-5 h-5"/>
                         Filters
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Start Date</label>
+                            <label className="block text-sm font-medium mb-1 text-muted-foreground">Start Date</label>
                             <Input
                                 type="date"
                                 value={filters.startDate}
-                                onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                                onChange={(e) =>
+                                    setFilters(prev => ({...prev, startDate: e.target.value}))}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">End Date</label>
+                            <label className="block text-sm font-medium mb-1 text-muted-foreground">End Date</label>
                             <Input
                                 type="date"
                                 value={filters.endDate}
-                                onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                                onChange={(e) =>
+                                    setFilters(prev => ({...prev, endDate: e.target.value}))}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Content Type</label>
+                            <label className="block text-sm font-medium mb-1 text-muted-foreground">Content Type</label>
+                            {/* THEME: Styled the select element to match the Input component. */}
                             <select
-                                className="w-full p-2 border border-gray-300 rounded-md"
-                                value={filters.contentType}
-                                onChange={(e) => setFilters(prev => ({ ...prev, contentType: e.target.value }))}
+                                className={cn('flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm...')}
+                                value={filters.contentType} onChange={(e) =>
+                                setFilters(prev => ({...prev, contentType: e.target.value}))}
                             >
                                 <option value="">All Types</option>
                                 <option value="image">Images</option>
@@ -244,19 +254,22 @@ export function BulkDownloadManager() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Client Email</label>
+                            <label className="block text-sm font-medium mb-1 text-muted-foreground">
+                                Client Email
+                            </label>
                             <Input
                                 placeholder="Search by email..."
-                                value={filters.client}
-                                onChange={(e) => setFilters(prev => ({ ...prev, client: e.target.value }))}
+                                value={filters.client} onChange={(e) =>
+                                setFilters(prev => ({...prev, client: e.target.value}))}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Company</label>
+                            <label className="block text-sm font-medium mb-1 text-muted-foreground">Company</label>
                             <Input
                                 placeholder="Search by company..."
                                 value={filters.company}
-                                onChange={(e) => setFilters(prev => ({ ...prev, company: e.target.value }))}
+                                onChange={(e) =>
+                                    setFilters(prev => ({...prev, company: e.target.value}))}
                             />
                         </div>
                     </div>
@@ -268,14 +281,14 @@ export function BulkDownloadManager() {
                 <CardContent className="p-4">
                     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={selectedItems.size === filteredContent.length && filteredContent.length > 0}
                                     onChange={toggleSelectAll}
-                                    className="rounded"
+                                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                                 />
-                                <span className="text-sm font-medium">
+                                <span className="text-sm font-medium text-foreground">
                   Select All ({filteredContent.length} items)
                 </span>
                             </label>
@@ -285,9 +298,8 @@ export function BulkDownloadManager() {
                                 </Badge>
                             )}
                         </div>
-
                         <div className="flex gap-2">
-                            <Tooltip content="Clear all filters" variant="dark">
+                            <Tooltip content="Clear all filters">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -296,22 +308,21 @@ export function BulkDownloadManager() {
                                         endDate: '',
                                         contentType: '',
                                         client: '',
-                                        company: '',
-                                    })}
-                                >
+                                        company: ''
+                                    })}>
                                     Clear Filters
                                 </Button>
                             </Tooltip>
-
-                            <Tooltip content="Download selected content metadata and links" variant="dark">
+                            <Tooltip content="Download selected content metadata and links">
                                 <Button
                                     variant="default"
                                     size="sm"
                                     onClick={downloadSelected}
                                     disabled={selectedItems.size === 0 || downloading}
                                 >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    {downloading ? 'Downloading...' : `Download Selected (${selectedItems.size})`}
+                                    <Download className="w-4 h-4 mr-2"/>
+                                    {downloading ?
+                                        <LoadingSpinner size="sm"/> : `Download Selected (${selectedItems.size})`}
                                 </Button>
                             </Tooltip>
                         </div>
@@ -319,7 +330,6 @@ export function BulkDownloadManager() {
                 </CardContent>
             </Card>
 
-            {/* --- NEW: Content Grid --- */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {filteredContent.map(item => (
                     <ContentCard
@@ -327,27 +337,24 @@ export function BulkDownloadManager() {
                         item={item}
                         isSelected={selectedItems.has(item.id)}
                         onSelectItem={toggleSelectItem}
-                        onViewDetails={() => setViewingItem(item)} // This sets the item to be viewed
-                                />
+                        onViewDetails={() => setViewingItem(item)}
+                    />
                 ))}
-                                    </div>
+            </div>
 
-            {/* Empty State */}
             {filteredContent.length === 0 && !loading && (
-                <div className="text-center py-12">
-                    <Archive className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No content found</h3>
-                    <p className="text-gray-600">
-                        Try adjusting your filters to see more content.
-                    </p>
-                </div>
+                <Card>
+                    <CardContent className="text-center py-12">
+                        <Archive className="w-12 h-12 text-muted-foreground mx-auto mb-4"/>
+                        <h3 className="text-lg font-medium text-foreground mb-2">No content found</h3>
+                        <p className="text-muted-foreground">
+                            Try adjusting your filters to see more content.
+                        </p>
+                    </CardContent>
+                </Card>
             )}
 
-            {/* --- ACTIVATED MODAL --- */}
-            <ContentDetailModal
-                item={viewingItem}
-                onClose={() => setViewingItem(null)}
-            />
+            <ContentDetailModal item={viewingItem} onClose={() => setViewingItem(null)}/>
         </div>
     );
 }

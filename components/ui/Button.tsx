@@ -1,33 +1,52 @@
 'use client';
 
 import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive';
-  size?: 'sm' | 'md' | 'lg';
+// THEME: 1. Define all button styles using `cva` for better organization.
+const buttonVariants = cva(
+  // Base classes applied to ALL buttons
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        // THEME: 2. Replace every hardcoded color class with its semantic equivalent.
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive:
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline:
+          'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline', // A common variant to add
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10', // A common size for icon-only buttons
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
 }
+);
+
+// THEME: 3. Update the props to use the variants defined by `cva`.
+export interface ButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {}
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'default', size = 'md', ...props }, ref) => {
+  ({ className, variant, size, ...props }, ref) => {
+    // THEME: 4. The `button` element now gets its classes from the `buttonVariants` helper.
     return (
       <button
-        className={cn(
-          'inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background',
-          {
-            'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm hover:shadow-md': variant === 'default',
-            'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 border border-gray-200': variant === 'secondary',
-            'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 shadow-sm': variant === 'outline',
-            'text-gray-700 hover:bg-gray-100 active:bg-gray-200': variant === 'ghost',
-            'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm hover:shadow-md': variant === 'destructive',
-          },
-          {
-            'h-8 px-3 text-sm': size === 'sm',
-            'h-10 px-4': size === 'md',
-            'h-12 px-6 text-lg': size === 'lg',
-          },
-          className
-        )}
+        className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
       />
@@ -37,4 +56,4 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
 Button.displayName = 'Button';
 
-export { Button };
+export { Button, buttonVariants };

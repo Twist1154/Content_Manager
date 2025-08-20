@@ -1,19 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
-import { Tooltip } from '@/components/ui/Tooltip';
-import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import {
-    LogOut,
-    User,
-    Settings,
-    ChevronDown,
-    Shield,
-    Users
-} from 'lucide-react';
-import Image from 'next/image';
+import {useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {Tooltip} from '@/components/ui/Tooltip';
+import {Breadcrumb} from '@/components/ui/Breadcrumb';
+import {LogOut, Settings, Shield, User, Users} from 'lucide-react';
+import {ThemeSwitcher} from '@/components/ui/ThemeSwitcher';
+import {ConfirmModal} from '@/components/ui/ConfirmModal';
+import {UserNav, UserNavHeader, UserNavItem, UserNavSeparator} from "@/components/ui/UserNav";
+import {Logo} from "@/components/ui/Logo";
 
 interface AdminHeaderProps {
     user: any;
@@ -21,8 +16,7 @@ interface AdminHeaderProps {
     breadcrumbItems?: Array<{ label: string; href?: string; current?: boolean }>;
 }
 
-export function AdminHeader({ user, title = 'Admin Dashboard', breadcrumbItems }: AdminHeaderProps) {
-    const [dropdownOpen, setDropdownOpen] = useState(false);
+export function AdminHeader({user, title = 'Admin Dashboard', breadcrumbItems}: AdminHeaderProps) {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const router = useRouter();
 
@@ -38,56 +32,43 @@ export function AdminHeader({ user, title = 'Admin Dashboard', breadcrumbItems }
             const data = await response.json();
 
             if (response.ok && data.success) {
-                // Clear any local storage or session data if needed
                 localStorage.clear();
                 sessionStorage.clear();
 
                 // Redirect to home page
                 router.push('/');
-                router.refresh(); // Force a refresh to clear any cached data
             } else {
                 console.error('Logout failed:', data.error);
-                // Still redirect even if there's an error to prevent being stuck
                 router.push('/');
             }
         } catch (error) {
             console.error('Logout error:', error);
-            // Fallback: still redirect to home page
             router.push('/');
         }
     };
 
     const confirmLogout = () => {
         setShowLogoutConfirm(true);
-        setDropdownOpen(false);
     };
 
     const defaultBreadcrumbs = [
-        { label: 'Admin Dashboard', current: true }
+        {label: 'Admin Dashboard', current: true}
     ];
 
     return (
         <>
-            <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+            <header className="bg-card text-card-foreground shadow-sm border-b border-border sticky top-0 z-40">
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex justify-between items-center">
-                        {/* Left side - Logo and Title */}
+                        {/* Left side (This is specific to AdminHeader, so it stays) */}
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-3">
-                                <Image
-                                    src="/Hapo Media - Primary.svg"
-                                    alt="Hapo Media"
-                                    width={40}
-                                    height={40}
-                                    className="w-10 h-10"
-                                />
+                                <Logo className="w-12 h-12" />
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h1 className="text-2xl font-bold text-gray-900">
-                                            {title}
-                                        </h1>
-                                        <Tooltip content="Admin dashboard with full system access" variant="dark">
-                                            <Shield className="w-5 h-5 text-green-600" />
+                                        <h1 className="text-2xl font-bold text-foreground">{title}</h1>
+                                        <Tooltip content="Admin dashboard with full system access">
+                                            <Shield className="w-5 h-5 text-primary"/>
                                         </Tooltip>
                                     </div>
                                     <Breadcrumb
@@ -98,130 +79,48 @@ export function AdminHeader({ user, title = 'Admin Dashboard', breadcrumbItems }
                             </div>
                         </div>
 
-                        {/* Right side - User Menu */}
+                        {/* Right side - Now much cleaner */}
                         <div className="flex items-center gap-4">
-                            <div className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">
-                                <Shield className="w-4 h-4 inline mr-1" />
-                                Admin Access
-                            </div>
+                            <ThemeSwitcher/>
 
-                            {/* User Dropdown */}
-                            <div className="relative">
-                                <Tooltip content="Admin user menu" variant="dark">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                                        className="flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-50"
-                                    >
-                                        <User className="w-4 h-4" />
-                                        <span className="hidden sm:inline">
-                                            {user.email}
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-                                    </Button>
-                                </Tooltip>
-
-                                {dropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                                        <div className="px-4 py-2 border-b border-gray-100">
-                                            <p className="text-sm font-medium text-gray-900">
-                                                Admin Account
-                                            </p>
-                                            <p className="text-sm text-gray-600 truncate">
-                                                {user.email}
-                                            </p>
-                                            <p className="text-xs text-green-600 mt-1">
-                                                Role: {user.profile?.role || 'admin'}
-                                            </p>
-                                        </div>
-
-                                        <div className="py-1">
-                                            <button
-                                                onClick={() => {
-                                                    setDropdownOpen(false);
-                                                    router.push('/profile');
-                                                }}
-                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                            >
-                                                <User className="w-4 h-4" />
-                                                Admin Profile
-                                            </button>
-
-                                            <button
-                                                onClick={() => {
-                                                    setDropdownOpen(false);
-                                                    router.push('/settings');
-                                                }}
-                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                            >
-                                                <Settings className="w-4 h-4" />
-                                                Admin Settings
-                                            </button>
-
-                                            <button
-                                                onClick={() => {
-                                                    setDropdownOpen(false);
-                                                    router.push('/dashboard');
-                                                }}
-                                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                            >
-                                                <Users className="w-4 h-4" />
-                                                Client View
-                                            </button>
-
-                                            <div className="border-t border-gray-100 my-1"></div>
-
-                                            <button
-                                                onClick={confirmLogout}
-                                                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                            >
-                                                <LogOut className="w-4 h-4" />
-                                                Sign Out
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <UserNav email={user.email}>
+                                <UserNavHeader
+                                    title="Admin Account"
+                                    email={user.email}
+                                    note={`Role: ${user.profile?.role || 'admin'}`}
+                                    noteVariant="primary"
+                                />
+                                <div className="py-1">
+                                    <UserNavItem onClick={() => router.push('/profile')}>
+                                        <User className="w-4 h-4"/> Admin Profile
+                                    </UserNavItem>
+                                    <UserNavItem onClick={() => router.push('/settings')}>
+                                        <Settings className="w-4 h-4"/> Admin Settings
+                                    </UserNavItem>
+                                    <UserNavItem onClick={() => router.push('/dashboard')}>
+                                        <Users className="w-4 h-4"/> Client View
+                                    </UserNavItem>
+                                    <UserNavSeparator/>
+                                    <UserNavItem onClick={confirmLogout}>
+                                        <LogOut className="w-4 h-4 text-destructive"/>
+                                        <span className="text-destructive">Sign Out</span>
+                                    </UserNavItem>
+                                </div>
+                            </UserNav>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* Logout Confirmation Modal */}
-            {showLogoutConfirm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Sign Out</h3>
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to sign out of your admin account? You&apos;ll need to sign in again to access the admin dashboard.
-                        </p>
-                        <div className="flex gap-3 justify-end">
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowLogoutConfirm(false)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                onClick={handleLogout}
-                            >
-                                <LogOut className="w-4 h-4 mr-2" />
-                                Sign Out
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ConfirmModal
+                isOpen={showLogoutConfirm}
+                onClose={() => setShowLogoutConfirm(false)}
+                onConfirm={handleLogout}
+                title="Confirm Sign Out"
+                description="Are you sure you want to sign out of your admin account? You'll need to sign in again to access the admin dashboard."
+                confirmText="Sign Out"
+            />
 
-            {/* Backdrop for dropdown */}
-            {dropdownOpen && (
-                <div
-                    className="fixed inset-0 z-30"
-                    onClick={() => setDropdownOpen(false)}
-                />
-            )}
         </>
     );
 }
