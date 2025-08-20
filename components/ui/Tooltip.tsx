@@ -2,39 +2,26 @@
 
 import * as React from 'react';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
-import {cn} from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
-// You can keep the TooltipProvider here or wrap your layout in it once.
 const TooltipProvider = TooltipPrimitive.Provider;
 const TooltipRoot = TooltipPrimitive.Root;
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
-
-// --- FIX 1: Define custom props for our enhanced TooltipContent ---
-// This allows us to accept the 'variant' prop in addition to all standard props.
-interface CustomTooltipContentProps
-    extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> {
-    variant?: 'dark' | 'light';
-}
-
-
-// --- FIX 2: Update TooltipContent to handle the 'variant' prop ---
-export const TooltipContent = React.forwardRef<
+// THEME: The concept of a 'variant' is no longer needed. The component will now have
+// a single, theme-aware style. We've removed the custom props interface.
+const TooltipContent = React.forwardRef<
     React.ElementRef<typeof TooltipPrimitive.Content>,
-    CustomTooltipContentProps // Use our custom props interface
->(({className, sideOffset = 4, variant = 'dark', ...props}, ref) => (
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
     <TooltipPrimitive.Content
         ref={ref}
         sideOffset={sideOffset}
         className={cn(
-            // Base styles for ALL variants
-            'z-50 overflow-hidden rounded-md px-3 py-1.5 text-xs font-medium animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-
-            // Conditional styles based on the 'variant' prop
-            variant === 'dark' && 'bg-gray-900 text-primary-foreground',
-            variant === 'light' && 'bg-white text-secondary-foreground border shadow-md',
-
-            // This allows for any additional custom classes to be passed in
+      // THEME: Replaced the conditional variant styles with a single set of semantic classes.
+      // - `bg-popover` and `text-popover-foreground` will automatically adapt to the theme.
+      // - `border` uses the theme's `--border` variable.
+      'z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
             className
         )}
         {...props}
@@ -42,15 +29,14 @@ export const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
+// --- REUSABLE TOOLTIP COMPONENT WRAPPER ---
 
-// --- YOUR NEW REUSABLE TOOLTIP COMPONENT ---
-
+// THEME: Removed the `variant` prop as it's no longer used.
 interface TooltipProps {
     content: React.ReactNode;
     children: React.ReactNode;
     position?: 'top' | 'bottom' | 'left' | 'right';
     className?: string;
-    variant?: 'dark' | 'light';
 }
 
 export function Tooltip({
@@ -58,19 +44,20 @@ export function Tooltip({
                             children,
                             position = 'top',
                             className,
-                            variant = 'dark',
                         }: TooltipProps) {
     return (
         <TooltipProvider delayDuration={200}>
             <TooltipRoot>
                 <TooltipTrigger asChild>{children}</TooltipTrigger>
-                <TooltipContent
-                side={position}
-                className={className}
-                variant={variant}>
-                    <p>{content}</p>
+        <TooltipContent side={position}
+                        className={className}>
+          {/* Casting to string for cases where content is a simple value like a number */}
+          <p>{String(content)}</p>
                 </TooltipContent>
             </TooltipRoot>
         </TooltipProvider>
     );
 }
+
+// Exporting all the primitives allows for more advanced, custom tooltip compositions if needed.
+export { TooltipProvider, TooltipRoot, TooltipTrigger };

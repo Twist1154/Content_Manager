@@ -24,12 +24,18 @@ export function BackButton({ href, label = 'Go back', className }: BackButtonPro
   };
 
   return (
-    <Tooltip content={label} variant="dark">
+    // THEME: The Tooltip's 'dark' variant might look better as the default,
+    // which will be theme-aware. This is an optional but recommended change.
+    <Tooltip content={label}>
       <Button
         variant="outline"
         size="sm"
         onClick={handleBack}
-        className={cn("border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400", className)}
+        // THEME: All hardcoded gray colors have been removed.
+        // The `variant="outline"` now correctly applies the theme's border,
+        // text, and hover colors automatically.
+        // We keep `cn()` so you can still pass in layout classes (e.g., margins).
+        className={cn(className)}
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back
