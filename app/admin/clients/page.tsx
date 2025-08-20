@@ -13,7 +13,8 @@ export default async function AdminClientsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        // THEME: Use theme variables for the background.
+        <div className="min-h-screen bg-background">
             <AdminHeader
                 user={user}
                 title="Client Management"
@@ -26,13 +27,15 @@ export default async function AdminClientsPage() {
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-6 h-6 text-blue-600" />
-                        <h2 className="text-xl font-semibold text-gray-900">All Clients</h2>
-                        <Tooltip content="Manage all client accounts and access their dashboards" variant="dark">
-                            <Shield className="w-5 h-5 text-gray-400" />
+                        {/* THEME: Use theme colors for the header icon and text. */}
+                        <Users className="w-6 h-6 text-primary" />
+                        <h2 className="text-xl font-semibold text-foreground">All Clients</h2>
+                        <Tooltip content="Manage all client accounts and access their dashboards">
+                            <Shield className="w-5 h-5 text-muted-foreground" />
                         </Tooltip>
                     </div>
-                    <p className="text-gray-600">
+                    {/* THEME: Use theme color for the descriptive text. */}
+                    <p className="text-muted-foreground">
                         View, manage, and access all client accounts and their content.
                     </p>
                 </div>

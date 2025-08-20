@@ -1,9 +1,11 @@
 import { AuthForm } from '@/components/auth/AuthForm';
 import { BackButton } from '@/components/ui/BackButton';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export default function AdminSignIn() {
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-4">
@@ -24,5 +26,6 @@ export default function AdminSignIn() {
         <AuthForm mode="signin" userType="admin" />
       </div>
     </div>
+    </ToastProvider>
   );
 }

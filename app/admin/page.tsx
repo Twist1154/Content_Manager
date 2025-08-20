@@ -1,106 +1,114 @@
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import { ContentViewer } from '@/components/admin/ContentViewer';
-import { AdminClientOverview } from '@/components/admin/AdminClientOverview';
-import { AdminHeader } from '@/components/admin/AdminHeader';
-import { Tooltip } from '@/components/ui/Tooltip';
-import { Users, Database, Download, Shield } from 'lucide-react';
+import {redirect} from 'next/navigation';
+import {getCurrentUser} from '@/lib/auth';
+import {AdminClientOverview} from '@/components/admin/AdminClientOverview';
+import {AdminHeader} from '@/components/admin/AdminHeader';
+import {Tooltip} from '@/components/ui/Tooltip';
+import {Database, Download, Shield, Users} from 'lucide-react';
 import Link from 'next/link';
+// REFACTOR: Import the new ContentManager and its data fetching action
+import {ContentManager} from '@/components/content/ContentManager';
+import {fetchAllContent} from '@/app/actions/data-actions';
+
+// This is a custom component we'll create for the dashboard links to avoid repeating styles.
+const DashboardLinkCard = ({href, icon: Icon, title, description, iconColorClass}) => (
+    <Link href={href}>
+        <div
+            className="bg-card text-card-foreground p-6 rounded-lg shadow-sm border border-border hover:shadow-md transition-shadow cursor-pointer">
+            <div className="flex items-center gap-4">
+                <Icon className={`w-8 h-8 ${iconColorClass}`}/>
+                <div>
+                    <h3 className="font-semibold text-foreground">{title}</h3>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+            </div>
+        </div>
+    </Link>
+);
+
 
 export default async function AdminDashboard() {
-  const user = await getCurrentUser();
-  
-  if (!user || user.profile?.role !== 'admin') {
-    redirect('/auth/admin/signin');
-  }
+    const user = await getCurrentUser();
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <AdminHeader
-        user={user}
-        title="Marketing Admin Dashboard"
+    if (!user || user.profile?.role !== 'admin') {
+        redirect('/auth/admin/signin');
+    }
+
+    return (
+        // THEME: Use theme variables for the background.
+        <div className="min-h-screen bg-background">
+            <AdminHeader
+                user={user}
+                title="Marketing Admin Dashboard"
+            />
+
+            <main className="container mx-auto px-4 py-8">
+                {/* THEME: Themed the link cards and extracted them to a small sub-component for cleanliness. */}
+                <div className="grid lg:grid-cols-4 gap-6 mb-8">
+                    <DashboardLinkCard
+                        href="/admin/clients"
+                        icon={Users}
+                        title="Client Management"
+                        description="Manage all client accounts"
+                        iconColorClass="text-primary"
+                    />
+                    <DashboardLinkCard
+                        href="/admin/content"
+                        icon={Database}
+                        title="Content Library"
+                        description="View all uploaded content"
+                        iconColorClass="text-green-500" // Status colors can be kept for variety
+                    />
+                    <DashboardLinkCard
+                        href="/admin/downloads"
+                        icon={Download}
+                        title="Bulk Downloads"
+                        description="Download content in bulk"
+                        iconColorClass="text-purple-500"
+                    />
+                    <DashboardLinkCard
+                        href="/dashboard"
+                        icon={Shield}
+                        title="Client View"
+                        description="Access client dashboard"
+                        iconColorClass="text-orange-500"
+                    />
+                </div>
+
+                {/* Quick Client Management Section */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-2">
+                        {/* THEME: Themed the section headers */}
+                        <h2 className="text-xl font-semibold text-foreground">Client Overview</h2>
+                        <Tooltip content="Quick overview of all client accounts">
+                            <Users className="w-5 h-5 text-muted-foreground"/>
+                        </Tooltip>
+                    </div>
+                    <p className="text-muted-foreground mb-6">
+                        Quick access to client accounts, their dashboard views, and recent activity.
+                    </p>
+                    <AdminClientOverview/>
+                </div>
+
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-2">
+                        <h2 className="text-xl font-semibold text-foreground">Recent Content Activity</h2>
+                        <Tooltip content="View and organize all client-submitted content">
+                            <Shield className="w-5 h-5 text-muted-foreground"/>
+                        </Tooltip>
+                    </div>
+                    <p className="text-muted-foreground">
+                        Quick overview of recent client uploads and activity.
+                    </p>
+                </div>
+
+                {/* REFACTOR: Replace ContentViewer with ContentManager */}
+                <ContentManager
+                    fetchAction={fetchAllContent}
+                    showGrouping={true} // You could set this to false for a simpler view on the dashboard
+                    defaultView="grid"   // Default to a simple grid view here
+                    isAdminView={true}
                 />
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/admin/clients">
-            <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Users className="w-8 h-8 text-blue-600" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">Client Management</h3>
-                  <p className="text-sm text-gray-600">Manage all client accounts</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/admin/content">
-            <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Database className="w-8 h-8 text-green-600" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">Content Library</h3>
-                  <p className="text-sm text-gray-600">View all uploaded content</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/admin/downloads">
-            <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Download className="w-8 h-8 text-purple-600" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">Bulk Downloads</h3>
-                  <p className="text-sm text-gray-600">Download content in bulk</p>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/dashboard">
-            <div className="bg-white p-6 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Shield className="w-8 h-8 text-orange-600" />
-                <div>
-                  <h3 className="font-semibold text-gray-900">Client View</h3>
-                  <p className="text-sm text-gray-600">Access client dashboard</p>
-                </div>
-              </div>
-            </div>
-          </Link>
+            </main>
         </div>
-
-        {/* Quick Client Management Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-xl font-semibold text-gray-900">Client Overview</h2>
-            <Tooltip content="Quick overview of all client accounts" variant="dark">
-              <Users className="w-5 h-5 text-gray-400" />
-            </Tooltip>
-          </div>
-          <p className="text-gray-600 mb-6">
-            Quick access to client accounts, their dashboard views, and recent activity.
-          </p>
-
-          <AdminClientOverview />
-        </div>
-
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-xl font-semibold text-gray-900">Recent Content Activity</h2>
-            <Tooltip content="View and organize all client-submitted content" variant="dark">
-              <Shield className="w-5 h-5 text-gray-400" />
-            </Tooltip>
-          </div>
-          <p className="text-gray-600">
-            Quick overview of recent client uploads and activity.
-          </p>
-        </div>
-        
-        <ContentViewer />
-      </main>
-    </div>
-  );
+    );
 }

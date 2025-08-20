@@ -3,8 +3,9 @@
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
+import {SupabaseClient} from "@supabase/supabase-js";
 
-// Client interface for overview data
+// Interfaces remain the same, they are well-defined.
 export interface ClientOverview {
     id: string;
     email: string;
@@ -20,7 +21,6 @@ export interface ClientOverview {
     active_campaigns?: number;
 }
 
-// Stats interface for overview statistics
 export interface OverviewStats {
     totalClients: number;
     activeClients: number;
@@ -28,7 +28,6 @@ export interface OverviewStats {
     recentActivity: number;
 }
 
-// Result interface for the server action
 export interface ClientOverviewResult {
     success: boolean;
     clients: ClientOverview[];
@@ -37,173 +36,128 @@ export interface ClientOverviewResult {
 }
 
 export async function getClientOverview(): Promise<ClientOverviewResult> {
-    console.log('client-overview-action: getClientOverview called');
+    console.log("--- [Action Triggered] getClientOverview ---");
+
     try {
-        console.log('client-overview-action: Creating Supabase client with service role...');
-        const supabase = await createClient(true); // Request service role key for admin operations
+        console.log("[getClientOverview] Creating Supabase client with service role. RLS will be bypassed.");
+        const supabase = await createClient({ useServiceRole: true })as SupabaseClient;
         console.log('client-overview-action: Supabase client created');
 
-        // Step 1: Fetch recent client profiles with the 'client' role
-        console.log('client-overview-action: Fetching recent profiles...');
-        const { data: profiles, error: profilesError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('role', 'client')
-            .order('created_at', { ascending: false })
-            .limit(6); // Show only recent 6 clients for overview
+        console.log("[getClientOverview] Fetching data from Supabase...");
+        const [statsData, recentClientsData] = await Promise.all([
+            supabase
+                .from('profiles')
+                .select('id, content(user_id, created_at, start_date, end_date)')
+                .eq('role', 'client'),
 
-        console.log('client-overview-action: Recent profiles result:', { 
-            profilesCount: profiles?.length, 
-            profilesError 
-        });
+            supabase
+                .from('profiles')
+                .select(`
+                id, email, role, created_at,
+                stores (id, name, brand_company)
+                `)
+                .eq('role', 'client')
+                .order('created_at', { ascending: false }),
+        ]);
 
-        if (profilesError) {
-            console.error('client-overview-action: Error fetching profiles:', profilesError);
-            throw profilesError;
+        console.log("[getClientOverview] Data received from Supabase.");
+
+        // --- LOG 3: Log potential errors from Supabase ---
+        if (statsData.error) {
+            console.error("[getClientOverview] ERROR from statsData query:", statsData.error);
+            throw statsData.error; // This will be caught by the main catch block
         }
-        
-        // Step 2: Fetch all client profiles for stats
-        console.log('client-overview-action: Fetching all profiles for stats...');
-        const { data: allProfiles, error: allProfilesError } = await supabase
-            .from('profiles')
-            .select('id, created_at')
-            .eq('role', 'client');
-        
-        console.log('client-overview-action: All profiles result:', { 
-            allProfilesCount: allProfiles?.length, 
-            allProfilesError 
-        });
-
-        if (allProfilesError) {
-            console.error('client-overview-action: Error fetching all profiles:', allProfilesError);
-            throw allProfilesError;
+        if (recentClientsData.error) {
+            console.error("[getClientOverview] ERROR from recentClientsData query:", recentClientsData.error);
+            throw recentClientsData.error;
         }
+        console.log("--- RAW DATA FROM SUPABASE (STATS) ---");
+        console.log(JSON.stringify(statsData.data, null, 2)); // Pretty-print the JSON
+        console.log("--- RAW DATA FROM SUPABASE (CLIENTS) ---");
+        console.log(JSON.stringify(recentClientsData.data, null, 2)); // Pretty-print the JSON
 
-        // Step 3: Fetch all content for stats and recent activity
-        console.log('client-overview-action: Fetching all content...');
-        const { data: allContent, error: allContentError } = await supabase
-            .from('content')
-            .select('created_at, user_id, start_date, end_date');
-        
-        console.log('client-overview-action: All content result:', { 
-            allContentCount: allContent?.length, 
-            allContentError 
-        });
+        console.log(`[getClientOverview] Received ${statsData.data?.length ?? 0} profiles for stats processing.`);
+        console.log(`[getClientOverview] Received ${recentClientsData.data?.length ?? 0} profiles for client list.`);
 
-        if (allContentError) {
-            console.error('client-overview-action: Error fetching all content:', allContentError);
-            throw allContentError;
+        if (statsData.data?.length === 0) {
+            console.warn("[getClientOverview] WARNING: The query returned 0 client profiles. This could be because no clients exist or an unexpected issue.");
         }
 
-        // Step 4: If we have recent profiles, fetch their stores and content
-        let clientsWithData: ClientOverview[] = [];
-        
-        if (profiles && profiles.length > 0) {
-            const clientIds = profiles.map(p => p.id);
-            console.log(`client-overview-action: Found ${clientIds.length} recent client IDs`);
-
-            // Fetch stores for recent clients
-            console.log('client-overview-action: Fetching stores for recent clients...');
-            const { data: stores, error: storesError } = await supabase
-                .from('stores')
-                .select('id, user_id, name, brand_company')
-                .in('user_id', clientIds);
-
-            console.log('client-overview-action: Stores result:', { 
-                storesCount: stores?.length, 
-                storesError 
-            });
-
-            if (storesError) {
-                console.error('client-overview-action: Error fetching stores:', storesError);
-                throw storesError;
-            }
-
-            // Group stores by client ID
-            const storesByClientId = new Map<string, any[]>();
-            stores?.forEach(store => {
-                if (!storesByClientId.has(store.user_id)) {
-                    storesByClientId.set(store.user_id, []);
-                }
-                storesByClientId.get(store.user_id)!.push(store);
-            });
-
-            // Filter content for recent clients
-            const clientContent = allContent?.filter(content => 
-                clientIds.includes(content.user_id)
-            ) || [];
-
-            // Group content by client ID
-            const contentByClientId = new Map<string, any[]>();
-            clientContent.forEach(content => {
-                if (!contentByClientId.has(content.user_id)) {
-                    contentByClientId.set(content.user_id, []);
-                }
-                contentByClientId.get(content.user_id)!.push(content);
-            });
-
-            // Assemble client data
-            clientsWithData = profiles.map(profile => {
-                const clientStores = storesByClientId.get(profile.id) || [];
-                const clientContentItems = contentByClientId.get(profile.id) || [];
-                
-                // Calculate active campaigns
-                const now = new Date();
-                const activeCampaigns = clientContentItems.filter(item =>
-                    new Date(item.start_date) <= now && new Date(item.end_date) >= now
-                ).length;
-
-                // Find latest upload
-                let latestUpload = null;
-                if (clientContentItems.length > 0) {
-                    latestUpload = clientContentItems.reduce((latest, current) => {
-                        return new Date(current.created_at) > new Date(latest.created_at) ? current : latest;
-                    }).created_at;
-                }
-
-                return {
-                    ...profile,
-                    stores: clientStores,
-                    content_count: clientContentItems.length,
-                    latest_upload: latestUpload,
-                    active_campaigns: activeCampaigns,
-                };
-            });
-        }
-
-        // Step 5: Calculate overview stats
-        console.log('client-overview-action: Calculating overview stats...');
-        
+        // --- Start processing the data... ---
+        const allProfilesWithContent = statsData.data || [];
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        const recentActivity = allContent?.filter(item =>
-            new Date(item.created_at) >= oneWeekAgo
-        ).length || 0;
+        let totalUploads = 0;
+        let recentActivity = 0;
+        const activeClientIds = new Set<string>();
+        
+        allProfilesWithContent.forEach(profile => {
+            if (Array.isArray(profile.content)) {
+            totalUploads += profile.content.length;
 
-        const activeClients = new Set(
-            allContent?.filter(item =>
-                new Date(item.created_at) >= oneWeekAgo
-            ).map(item => item.user_id)
-        ).size;
+            profile.content.forEach(c => {
+                const createdAt = new Date(c.created_at);
+                if (createdAt >= oneWeekAgo) {
+                    recentActivity++;
+                    activeClientIds.add(c.user_id);
+        }
+        });
+            }
+            });
 
         const stats: OverviewStats = {
-            totalClients: allProfiles?.length || 0,
-            activeClients,
-            totalUploads: allContent?.length || 0,
-            recentActivity
+            totalClients: allProfilesWithContent.length,
+            activeClients: activeClientIds.size,
+            totalUploads,
+            recentActivity,
         };
-        
-        console.log('client-overview-action: Stats calculated:', stats);
 
-        console.log('client-overview-action: Returning success result with clients and stats');
+        // --- Process Recent Clients List ---
+        const recentProfiles = recentClientsData.data || [];
+        const clients: ClientOverview[] = recentProfiles.map(profile => {
+            // Find the content for this specific client from our stats data
+            const profileContent =
+                allProfilesWithContent.find(p => p.id === profile.id)?.content || [];
+
+            let latestUploadDate: string | undefined = undefined;
+            if (profileContent.length > 0) {
+                latestUploadDate = profileContent.reduce((latest, current) =>
+                    new Date(current.created_at) > new Date(latest.created_at)
+                        ? current
+                        : latest
+                ).created_at;
+                }
+
+                const now = new Date();
+            const activeCampaigns = profileContent.filter(item =>
+                    new Date(item.start_date) <= now && new Date(item.end_date) >= now
+                ).length;
+
+                return {
+                ...(profile as Omit<typeof profile, 'stores'>), // Cast to ensure type compatibility
+                stores: profile.stores || [],
+                content_count: profileContent.length,
+                latest_upload: latestUploadDate,
+                    active_campaigns: activeCampaigns,
+                };
+            });
+
+        console.log(`[getClientOverview] Processing complete. Returning ${clients.length} clients and final stats.`);
+        console.log("[getClientOverview] Final Stats:", stats);
+
+        console.log("--- [Action Succeeded] getClientOverview ---");
         return {
             success: true,
-            clients: clientsWithData,
+            clients,
             stats,
         };
+
     } catch (error: any) {
-        console.error('client-overview-action: Error fetching client overview:', error);
+        console.error("--- [Action Failed] An error occurred in getClientOverview ---");
+        console.error("Error Message:", error.message);
+        console.error("Full Error Object:", error);
+
         return {
             success: false,
             clients: [],
@@ -213,7 +167,7 @@ export async function getClientOverview(): Promise<ClientOverviewResult> {
                 totalUploads: 0,
                 recentActivity: 0
             },
-            error: error.message || 'An unexpected error occurred.'
+            error: error.message || 'An unexpected error occurred.',
         };
     }
 }

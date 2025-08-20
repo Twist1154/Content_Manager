@@ -1,9 +1,11 @@
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { ContentViewer } from '@/components/admin/ContentViewer';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { Database, Shield } from 'lucide-react';
+// REFACTOR: Import the new ContentManager and the data fetching action
+import { ContentManager } from '@/components/content/ContentManager';
+import { fetchAllContent } from '@/app/actions/data-actions';
 
 export default async function AdminContentPage() {
     const user = await getCurrentUser();
@@ -13,7 +15,8 @@ export default async function AdminContentPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        // THEME: Use theme variables for the background.
+        <div className="min-h-screen bg-background">
             <AdminHeader
                 user={user}
                 title="Content Library"
@@ -26,18 +29,25 @@ export default async function AdminContentPage() {
             <main className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-2">
-                        <Database className="w-6 h-6 text-green-600" />
-                        <h2 className="text-xl font-semibold text-gray-900">All Content</h2>
-                        <Tooltip content="View and organize all client-submitted content" variant="dark">
-                            <Shield className="w-5 h-5 text-gray-400" />
+                        {/* THEME: Use theme colors */}
+                        <Database className="w-6 h-6 text-primary" />
+                        <h2 className="text-xl font-semibold text-foreground">All Content</h2>
+                        <Tooltip content="View and organize all client-submitted content">
+                            <Shield className="w-5 h-5 text-muted-foreground" />
                         </Tooltip>
                     </div>
-                    <p className="text-gray-600">
+                    <p className="text-muted-foreground">
                         Complete library of all client-uploaded marketing content with advanced filtering and organization.
                     </p>
                 </div>
 
-                <ContentViewer />
+                {/* REFACTOR: Replace ContentViewer with ContentManager */}
+                <ContentManager
+                    fetchAction={fetchAllContent}
+                    showGrouping={true}
+                    defaultView="company"
+                    isAdminView={true} // Use the AdminContentCard
+                />
             </main>
         </div>
     );

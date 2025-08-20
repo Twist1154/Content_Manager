@@ -1,7 +1,10 @@
+// app/actions/download-data-action.ts
+
 'use server';
 
 import { createClient } from '@/utils/supabase/server';
 import { format } from 'date-fns';
+import {SupabaseClient} from "@supabase/supabase-js";
 
 interface DownloadResult {
     success: boolean;
@@ -12,7 +15,7 @@ interface DownloadResult {
 
 export async function getClientDataAsCsv(clientId: string, clientEmail: string): Promise<DownloadResult> {
     try {
-        const supabase = await  createClient(); // Server client with admin rights
+        const supabase = await  createClient({ useServiceRole: true })as SupabaseClient;
 
         const { data: content, error } = await supabase
             .from('content')

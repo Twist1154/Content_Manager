@@ -34,14 +34,10 @@ CREATE POLICY "Users can read content files"
       -- Users can read their own files (files in folders named with their user ID)
       (storage.foldername(name))[1] = auth.uid()::text
       OR
-      -- Admins can read all files
-      EXISTS (
-        SELECT 1 FROM profiles
-        WHERE profiles.id = auth.uid()
-        AND profiles.role = 'admin'
-      )
-    )
-  );
+          -- Admin can read all files (JWT check)
+      (auth.jwt() ->> 'role') = 'admin'
+        )
+    );
 
 -- Allow users to update their own files
 CREATE POLICY "Users can update own content files"

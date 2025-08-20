@@ -20,6 +20,7 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+// No changes needed here - purely for logic
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -46,6 +47,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// No changes needed here - purely for logic
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
@@ -54,6 +56,7 @@ export function useToast() {
   return context;
 }
 
+// No changes needed here - purely for layout
 function ToastContainer() {
   const { toasts, removeToast } = useToast();
 
@@ -71,6 +74,7 @@ interface ToastItemProps {
   onRemove: (id: string) => void;
 }
 
+// --- ALL THEME CHANGES ARE IN THIS COMPONENT ---
 function ToastItem({ toast, onRemove }: ToastItemProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -81,35 +85,40 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
 
   const handleRemove = () => {
     setIsVisible(false);
-    setTimeout(() => onRemove(toast.id), 300);
+    setTimeout(() => onRemove(toast.id), 300); // Wait for animation to finish
   };
 
+  // THEME: Replaced hardcoded icon colors with semantic theme colors.
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        // Using 'primary' for success for theme consistency.
+        return <CheckCircle className="w-5 h-5 text-primary" />;
       case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
+        return <AlertCircle className="w-5 h-5 text-destructive" />;
       case 'info':
-        return <Info className="w-5 h-5 text-blue-600" />;
+        return <Info className="w-5 h-5 text-accent-foreground" />;
     }
   };
 
+  // THEME: Replaced hardcoded background/border/text colors with theme-aware classes
+  // that use opacity modifiers for a modern, consistent look.
   const getStyles = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
+        return 'bg-primary/10 border-primary/20 text-primary';
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-destructive/10 border-destructive/20 text-destructive';
       case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+        return 'bg-accent border-accent/20 text-accent-foreground';
     }
   };
 
   return (
     <div
       className={cn(
-        'min-w-80 max-w-md p-4 rounded-lg border shadow-lg transition-all duration-300 transform',
+        // THEME: The base styles are now simpler. The colored styles are applied by getStyles().
+        'min-w-80 max-w-md p-4 rounded-lg border bg-background shadow-lg transition-all duration-300 transform',
         getStyles(),
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
       )}
@@ -117,6 +126,7 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       <div className="flex items-start gap-3">
         {getIcon()}
         <div className="flex-1">
+          {/* The text color is inherited from the parent, which is now theme-aware */}
           <h4 className="font-semibold text-sm">{toast.title}</h4>
           {toast.message && (
             <p className="text-sm mt-1 opacity-90">{toast.message}</p>
@@ -124,7 +134,9 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
         </div>
         <button
           onClick={handleRemove}
-          className="flex-shrink-0 p-1 hover:bg-black hover:bg-opacity-10 rounded transition-colors"
+          // THEME: Replaced 'hover:bg-black hover:bg-opacity-10' with 'hover:bg-accent'
+          // for a close button that works in both light and dark modes.
+          className="flex-shrink-0 p-1 hover:bg-accent rounded-full transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

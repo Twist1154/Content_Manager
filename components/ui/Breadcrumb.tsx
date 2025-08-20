@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/utils/supabase/client';
+import { fetchUserRole } from '@/app/actions/data-actions';
 
 interface BreadcrumbItem {
   label: string;
@@ -28,21 +29,22 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
       if (user) {
         setUser(user);
 
-        // Get user profile to determine role
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        // Get user role using centralized function
+        const result = await fetchUserRole(user.id);
 
-        setUserRole(profile?.role || 'client');
+        if (result.success) {
+          setUserRole(result.role || 'client');
+        } else {
+          console.error('Error fetching user role:', result.error);
+          setUserRole('client'); // Default fallback
+        }
       }
     };
 
     getUser();
   }, [supabase]);
 
-  const getHomeUrl = () => {
+ /* const getHomeUrl = () => {
     if (!user) return '/';
 
     // Route based on user role
@@ -51,15 +53,21 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
     } else {
       return '/dashboard';
     }
-  };
+  };*/
+    const getHomeUrl = () => {
+        if (!user) return '/';
+        return userRole === 'admin' ? '/admin' : '/dashboard';
+    };
   // Filter items to only include those with a valid href or the current item
   const validItems = items.filter(item => item.href || item.current);
   
   return (
-    <nav className={cn('flex items-center space-x-1 text-sm text-gray-500', className)}>
+    // THEME: Replaced 'text-gray-500' with 'text-muted-foreground' for base link color.
+    <nav className={cn('flex items-center space-x-1 text-sm text-muted-foreground', className)}>
       <Link 
         href={getHomeUrl()}
-        className="flex items-center hover:text-gray-700 transition-colors"
+        // THEME: Replaced 'hover:text-gray-700' with 'hover:text-foreground' for a higher contrast hover.
+        className="flex items-center hover:text-foreground transition-colors"
         title={user ? (userRole === 'admin' ? 'Admin Dashboard' : 'Dashboard') : 'Home'}
       >
         <Home className="w-4 h-4" />
@@ -71,7 +79,8 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
           {item.href && !item.current ? (
             <Link 
               href={item.href} 
-              className="hover:text-gray-700 transition-colors"
+              // THEME: Replaced 'hover:text-gray-700' with 'hover:text-foreground'.
+              className="hover:text-foreground transition-colors"
               title={item.label}
             >
               {item.label}
@@ -79,7 +88,9 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
           ) : (
             <span 
               className={cn(
-                item.current ? 'text-gray-900 font-medium' : 'text-gray-500'
+                // THEME: Replaced 'text-gray-900' with 'text-foreground' for the current page.
+                // The other class is inherited from the parent nav, so no change is needed there.
+                item.current && 'text-foreground font-medium'
               )}
               title={item.label}
             >
