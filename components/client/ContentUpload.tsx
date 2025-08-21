@@ -2,7 +2,7 @@
 
 'use client';
 
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {useDropzone} from 'react-dropzone';
 import {createClient} from '@/utils/supabase/client';
 import {Button} from '@/components/ui/Button';
@@ -14,14 +14,15 @@ import type {ContentData} from '@/app/actions/data-actions';
 import {insertContent} from '@/app/actions/data-actions';
 import {LoadingSpinner} from '@/components/ui/LoadingSpinner';
 import {cn} from '@/lib/utils';
+import type { Store as StoreType } from '@/types/content';
 
 interface ContentUploadProps {
     userId: string;
-    storeId: string;
+    stores: StoreType[];
     onSuccess?: () => void;
 }
 
-export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) {
+export function ContentUpload({userId, stores, onSuccess}: ContentUploadProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [formData, setFormData] = useState({
         title: '',
@@ -32,6 +33,11 @@ export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) 
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>(stores && stores.length > 0 ? [stores[0].id] : []);
+
+    useEffect(() => {
+        setSelectedStoreIds(stores && stores.length > 0 ? [stores[0].id] : []);
+    }, [stores]);
 
     // Create supabase client for storage operations (client-side only)
     const supabase = createClient();
@@ -84,6 +90,10 @@ export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) 
             setError('Please select at least one file');
             return;
         }
+        if (!selectedStoreIds || selectedStoreIds.length === 0) {
+            setError('Please select at least one store');
+            return;
+        }
 
         setLoading(true);
         setError('');
@@ -92,23 +102,25 @@ export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) 
             for (const file of files) {
                 const fileUrl = await uploadFile(file);
 
-                const contentData: ContentData = {
-                    store_id: storeId,
-                    user_id: userId,
-                    title: formData.title || file.name,
-                    type: getFileType(file),
-                    file_url: fileUrl,
-                    file_size: file.size,
-                    start_date: formData.start_date,
-                    end_date: formData.end_date,
-                    recurrence_type: formData.recurrence_type,
-                    recurrence_days: formData.recurrence_days.length > 0 ? formData.recurrence_days : null,
-                };
+                for (const storeId of selectedStoreIds) {
+                    const contentData: ContentData = {
+                        store_id: storeId,
+                        user_id: userId,
+                        title: formData.title || file.name,
+                        type: getFileType(file),
+                        file_url: fileUrl,
+                        file_size: file.size,
+                        start_date: formData.start_date,
+                        end_date: formData.end_date,
+                        recurrence_type: formData.recurrence_type,
+                        recurrence_days: formData.recurrence_days.length > 0 ? formData.recurrence_days : null,
+                    };
 
-                const result = await insertContent(contentData);
+                    const result = await insertContent(contentData);
 
-                if (!result.success) {
-                    throw new Error(result.error);
+                    if (!result.success) {
+                        throw new Error(result.error);
+                    }
                 }
             }
 
@@ -161,8 +173,7 @@ export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) 
                         ) : (
                             <div>
                                 <p className="mb-2 text-foreground">Drag & drop files here, or click to select</p>
-                                <p className="text-sm text-muted-foreground">Images, videos, and audio files
-                                    supported</p>
+                                <p className="text-sm text-muted-foreground">Images, videos, and audio files supported</p>
                             </div>
                         )}
                     </div>
@@ -188,6 +199,30 @@ export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) 
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({...prev, title: e.target.value}))}
                     />
+
+                    {/* Store selection */}
+                    <div>
+                        <label className="block text-sm font-medium mb-2 text-muted-foreground">Stores</label>
+                        {(stores?.length ?? 0) === 0 ? (
+                            <div className="text-sm text-destructive mb-2">No stores found for your account. Please create a store before uploading content.</div>
+                        ) : null}
+                        <Tooltip content={stores?.length === 0 ? "No stores available" : "Select one or more stores this content belongs to (Ctrl/Cmd+Click)"}>
+                            <select
+                                multiple
+                                className={cn('flex h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm...')}
+                                value={selectedStoreIds}
+                                onChange={(e) => {
+                                    const values = Array.from((e.target as HTMLSelectElement).selectedOptions).map(o => o.value);
+                                    setSelectedStoreIds(values);
+                                }}
+                                disabled={stores?.length === 0}
+                            >
+                                {(stores ?? []).map((s) => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                        </Tooltip>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -260,11 +295,19 @@ export function ContentUpload({userId, storeId, onSuccess}: ContentUploadProps) 
                     )}
 
                     <Tooltip
-                        content={files.length === 0 ? "Please select files to upload" : "Upload your selected content"}>
+                        content={
+                            (stores?.length ?? 0) === 0
+                                ? "No stores available"
+                                : (selectedStoreIds?.length ?? 0) === 0
+                                    ? "Please select at least one store"
+                                    : files.length === 0
+                                        ? "Please select files to upload"
+                                        : "Upload your selected content"
+                        }>
                         <Button
                             type="submit"
                             className="w-full bg-[#1029e8] text-white disabled:opacity-70"
-                            disabled={loading || files.length === 0}
+                            disabled={loading || files.length === 0 || (stores?.length ?? 0) === 0 || (selectedStoreIds?.length ?? 0) === 0}
                             variant="default"
                             size="lg"
                         >

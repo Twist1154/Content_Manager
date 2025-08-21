@@ -34,6 +34,7 @@ export function DashboardClient({
     // --- NEW: State for the delete confirmation modal ---
     const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
     const [showAddStoreForm, setShowAddStoreForm] = useState(false);
+    const [contentRefreshKey, setContentRefreshKey] = useState(0);
 
     // --- NEW: Handler to delete the client ---
     const handleDeleteClient = async () => {
@@ -104,7 +105,7 @@ export function DashboardClient({
                         <div className="lg:col-span-1">
                             <Card>
                                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />Upload New Content</CardTitle></CardHeader>
-                                <CardContent><ContentUpload userId={userId} storeId={initialStores[0].id} /></CardContent>
+                                <CardContent><ContentUpload userId={userId} stores={initialStores} onSuccess={() => setContentRefreshKey(prev => prev + 1)} /></CardContent>
                             </Card>
                         </div>
                     )}
@@ -154,10 +155,11 @@ export function DashboardClient({
                 <div>
                     <h2 className="text-2xl font-bold text-foreground mb-6">{isAdminView ? 'Client Content Library' : 'Your Content Library'}</h2>
                     <ContentManager
+                        key={contentRefreshKey}
                         fetchAction={userFetchAction}
                         showFilters={true}
                         defaultView="grid"
-                            isAdminView={isAdminView} // --- PASS THIS PROP ---
+                        isAdminView={isAdminView} // --- PASS THIS PROP ---
                     />
                 </div>
             )}
