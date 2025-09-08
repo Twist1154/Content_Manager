@@ -6,11 +6,11 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.3-38B2AC)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive content management system designed to streamline digital marketing campaigns. This platform enables clients to easily upload marketing content while providing marketing teams with powerful tools to organize and deploy materials efficiently.
+A content upload and management application for marketing teams and clients. Clients can upload images, videos, and audio, assign them to stores, and schedule when they should run. Admins can review and manage content across accounts.
 
 ## 🚀 Overview
 
-The Digital Marketing Content Hub is a full-stack web application that bridges the gap between content creators and marketing teams. It provides a secure, role-based platform where clients can upload their marketing materials (images, videos, audio) with scheduling options, while administrators can view, organize, and manage all content across multiple locations and companies.
+Uploader is a full-stack Next.js application powered by Supabase that provides secure, role-based access. Clients upload marketing materials with scheduling and store selection; administrators view, organize, and manage content across multiple locations and companies.
 
 ## ✨ Key Features
 
@@ -30,14 +30,13 @@ The Digital Marketing Content Hub is a full-stack web application that bridges t
 
 ### Security & Administration
 - **Role-Based Access Control**: Separate client and admin authentication flows
-- **Superadmin Bypass**: Secure backdoor access for system administration
 - **Row-Level Security**: Database-level security using Supabase RLS
 - **File Storage Security**: Secure file uploads with user-specific access controls
 
 ## 🛠 Technologies Used
 
 ### Frontend
-- **Next.js 13.5.1** - React framework with App Router
+- **Next.js 15.x** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first CSS framework
 - **Lucide React** - Modern icon library
@@ -57,7 +56,7 @@ The Digital Marketing Content Hub is a full-stack web application that bridges t
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
-- **Node.js** (version 18.0 or higher)
+- **Node.js** (version 18.18 or higher)
 - **npm** or **yarn** package manager
 - **Git** for version control
 - A **Supabase** account (free tier available)
@@ -96,10 +95,13 @@ Create a `.env.local` file in the root directory:
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Superadmin Configuration (Change these in production!)
-SUPERADMIN_MASTER_KEY=your_secure_master_key_2024
-SUPERADMIN_SECRET=your_super_secret_hash_key_2024
+# App URLs
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Google One Tap (optional)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
 ### 5. Set Up Database
@@ -161,19 +163,6 @@ Visit [http://localhost:3000](http://localhost:3000) to see the application.
     - Preview media files directly in the browser
     - Monitor campaign schedules and recurrence patterns
 
-### Superadmin Access
-
-For system administration and emergency access:
-
-1. **Generate Access Key**
-    - Visit `/superadmin` in your browser
-    - Enter your master key (from environment variables)
-    - Generate a time-limited superadmin key
-
-2. **Bypass Authentication**
-    - Use the generated key as a URL parameter: `/admin?superadmin_key=YOUR_KEY`
-    - Or include it as a header: `x-superadmin-key: YOUR_KEY`
-    - Access expires after 24 hours
 
 ## 🔐 Authorization & User Validation
 
@@ -192,7 +181,6 @@ The application uses a multi-layered authentication system:
 
 - **Client**: Can upload content, manage their stores, view their own uploads
 - **Admin**: Can view all content across all clients, organize campaigns
-- **Superadmin**: Emergency access that bypasses normal authentication
 
 ### Security Features
 
@@ -211,8 +199,9 @@ The application uses a multi-layered authentication system:
 |----------|-------------|----------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | Yes |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key | Yes |
-| `SUPERADMIN_MASTER_KEY` | Master key for generating superadmin access | Yes |
-| `SUPERADMIN_SECRET` | Secret for superadmin key validation | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key used for server-side admin actions | Yes |
+| `NEXT_PUBLIC_SITE_URL` | Base site URL used for auth email redirects (defaults to http://localhost:3000) | Optional |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google One Tap Client ID (optional) | Optional |
 
 ### Database Schema
 
@@ -230,7 +219,7 @@ The application uses the following main tables:
 
 ## 🤝 Contributing
 
-We welcome contributions to improve the Digital Marketing Content Hub! Here's how you can help:
+We welcome contributions to improve Uploader! Here's how you can help:
 
 ### Getting Started
 
@@ -273,10 +262,6 @@ We welcome contributions to improve the Digital Marketing Content Hub! Here's ho
 - Check storage policies in Supabase dashboard
 - Ensure file types are supported
 
-**Superadmin access denied:**
-- Verify environment variables are set correctly
-- Check that the generated key hasn't expired (24-hour limit)
-- Ensure the master key matches your environment configuration
 
 ## 📄 License
 
@@ -300,7 +285,6 @@ For support, questions, or feature requests:
     - Client content upload system
     - Admin dashboard with content organization
     - Role-based authentication
-    - Superadmin bypass system
     - File storage and management
 
 ## 🚀 Deployment
@@ -319,7 +303,6 @@ For support, questions, or feature requests:
    ```
 
 3. **Security Checklist**
-    - Change default superadmin credentials
     - Enable HTTPS
     - Configure proper CORS policies
     - Set up monitoring and logging
