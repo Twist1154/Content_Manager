@@ -121,6 +121,7 @@ export function ContentUpload({userId, stores, onSuccess}: ContentUploadProps) {
                     if (!result.success) {
                         throw new Error(result.error);
                     }
+
                 }
             }
 

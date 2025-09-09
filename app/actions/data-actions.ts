@@ -4,6 +4,7 @@
 
 import {createClient} from '@/utils/supabase/server';
 import {SupabaseClient} from "@supabase/supabase-js";
+import { notifyAdminsOfContentUpload } from '@/app/actions/notification-actions';
 
 // Types for better type safety
 export interface StoreData {
@@ -128,6 +129,12 @@ export async function insertContent(contentData: ContentData): Promise<{ success
             console.error('Error inserting content:', error);
             return {success: false, error: error.message};
         }
+
+        // Fire-and-forget admin notification for this uploaded item
+        notifyAdminsOfContentUpload({
+            userId: contentData.user_id,
+            items: [{ title: contentData.title, storeId: contentData.store_id }]
+        }).catch(() => void 0);
 
         return {success: true};
     } catch (error: any) {

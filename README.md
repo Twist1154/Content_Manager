@@ -354,3 +354,31 @@ git rm --cached -r .idea
 # Commit the change
 git commit -m "chore(git): ignore JetBrains .idea project files"
 ```
+
+# Uploader
+
+This project is a Next.js app integrated with Supabase for authentication, storage, and data. 
+
+## Admin Email Notifications on Client Uploads
+
+When a client uploads content, the system now notifies all admins via email.
+
+How it works:
+- After each content record is created on the server (app/actions/data-actions.ts > insertContent), a fire-and-forget server-side notification runs.
+- The notification fetches all admin emails from the profiles table and sends a single email per created item.
+- Email sending is abstracted via lib/notifications/email.ts and uses a configurable HTTP email provider/webhook.
+
+Configure your email provider via environment variables:
+- NOTIFY_EMAIL_API_URL: HTTPS endpoint of your email service/webhook. The service should accept JSON payload: { to: string[], subject: string, html: string, from?: string }.
+- NOTIFY_EMAIL_API_KEY: Secret token that will be included as Authorization: Bearer <token>.
+- NOTIFY_EMAIL_FROM (optional): Default from address. Defaults to no-reply@uploader.local.
+
+Notes:
+- If NOTIFY_EMAIL_API_URL or NOTIFY_EMAIL_API_KEY is not set, emails will be skipped (safe no-op) and a warning will be logged. Uploads will not be blocked.
+- Admins are resolved from profiles where role = 'admin'. Ensure emails exist in those records.
+
+Development patterns followed:
+- Notification logic lives in server actions and lib/notifications, keeping secrets on the server.
+- Client code does not handle secrets or email sending.
+- The design is provider-agnostic and easily swappable.
+
