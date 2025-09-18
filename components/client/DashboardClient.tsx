@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ContentManager } from '@/components/content/ContentManager';
 import { fetchContentForUser } from '@/app/actions/data-actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Store, Upload, TrendingUp, Calendar, Trash2 } from 'lucide-react';
+import { Store, Upload, TrendingUp, Calendar, Trash2, Plus } from 'lucide-react';
 import { StoreForm } from '@/components/client/StoreForm';
 import { ContentUpload } from '@/components/client/ContentUpload';
 import { StatCard } from '@/components/ui/StatCard';
@@ -28,11 +28,13 @@ export function DashboardClient({
     contentStats,
 }: DashboardClientProps) {
     // The fetch action is created here, capturing the userId
-    const userFetchAction = () => fetchContentForUser(userId);
+    const userFetchAction = () => fetchContentForUser(userId, { useServiceRole: isAdminView });
     const router = useRouter(); // --- NEW: Get the router ---
 
     // --- NEW: State for the delete confirmation modal ---
     const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [showAddStoreForm, setShowAddStoreForm] = useState(false);
+    const [contentRefreshKey, setContentRefreshKey] = useState(0);
 
     // --- NEW: Handler to delete the client ---
     const handleDeleteClient = async () => {
@@ -103,23 +105,46 @@ export function DashboardClient({
                         <div className="lg:col-span-1">
                             <Card>
                                 <CardHeader><CardTitle className="flex items-center gap-2"><Upload className="w-5 h-5" />Upload New Content</CardTitle></CardHeader>
-                                <CardContent><ContentUpload userId={userId} storeId={initialStores[0].id} /></CardContent>
+                                <CardContent><ContentUpload userId={userId} stores={initialStores} onSuccess={() => setContentRefreshKey(prev => prev + 1)} /></CardContent>
                             </Card>
                         </div>
                     )}
                     <div className={!isAdminView ? 'lg:col-span-2' : 'lg:col-span-3'}>
                         <Card>
-                            <CardHeader><CardTitle className="flex items-center gap-2"><Store className="w-5 h-5" />{isAdminView ? 'Client Stores' : 'Your Stores'}</CardTitle></CardHeader>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Store className="w-5 h-5" />{isAdminView ? 'Client Stores' : 'Your Stores'}
+                                    </CardTitle>
+                                    {!isAdminView && (
+                                        <Button variant="outline" size="sm" onClick={() => setShowAddStoreForm(prev => !prev)}>
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            {showAddStoreForm ? 'Cancel' : 'Add Store'}
+                                        </Button>
+                                    )}
+                                </div>
+                            </CardHeader>
                             <CardContent>
                                 <div className="grid gap-4">
                                     {initialStores.map(store => (
-                                            <div key={store.id} className="p-4 bg-muted/50 rounded-lg border border-border">
+                                        <div key={store.id} className="p-4 bg-muted/50 rounded-lg border border-border">
                                             <h3 className="font-semibold text-foreground">{store.name}</h3>
                                             <p className="text-muted-foreground">{store.brand_company}</p>
                                             <p className="text-sm text-muted-foreground">{store.address}</p>
                                         </div>
                                     ))}
                                 </div>
+                                {showAddStoreForm && !isAdminView && (
+                                    <div className="mt-6">
+                                        <StoreForm
+                                            userId={userId}
+                                            onSuccess={() => {
+                                                setShowAddStoreForm(false);
+                                                router.refresh();
+                                            }}
+                                        />
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -130,10 +155,11 @@ export function DashboardClient({
                 <div>
                     <h2 className="text-2xl font-bold text-foreground mb-6">{isAdminView ? 'Client Content Library' : 'Your Content Library'}</h2>
                     <ContentManager
+                        key={contentRefreshKey}
                         fetchAction={userFetchAction}
                         showFilters={true}
                         defaultView="grid"
-                            isAdminView={isAdminView} // --- PASS THIS PROP ---
+                        isAdminView={isAdminView} // --- PASS THIS PROP ---
                     />
                 </div>
             )}
